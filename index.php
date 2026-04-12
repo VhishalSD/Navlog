@@ -25,29 +25,73 @@ $flights = $db->getFlights();
 
 /* ------------ GET THE SELECTED FLIGHT ID ------------ */
 $selectedFlightId = isset($_GET['flight_id']) ? (int)$_GET['flight_id'] : 1;
+$errorMessage = '';
+$successMessage = '';
 
-/* ------------ HANDLE FORM SUBMIT ------------ */
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $db->addLeg(
-        (int)$_POST['flight_id'],
-        (int)$_POST['leg_number'],
-        (float)$_POST['heading_var'],
-        (float)$_POST['wind_w'],
-        (float)$_POST['wind_v'],
-        (float)$_POST['direction_tt'],
-        (float)$_POST['distance_interval'],
-        (float)$_POST['tas'],
-        (string)$_POST['schedule_eto'],
-        (string)$_POST['schedule_reto'],
-        (string)$_POST['schedule_ato'],
-        (string)$_POST['altfl_mef'],
-        (string)$_POST['altfl_cruise'],
-        (string)$_POST['chkp_checkpoint'],
-        (string)$_POST['chkp_freq']
-    );
+if (isset($_GET['success'])) {
+    if ($_GET['success'] === 'flight_added') {
+        $successMessage = 'Flight added successfully.';
+    }
 
-    header('Location: index.php?flight_id=' . (int)$_POST['flight_id']);
+    if ($_GET['success'] === 'leg_added') {
+        $successMessage = 'Leg added successfully.';
+    }
+    if ($_GET['success'] === 'leg_deleted') {
+        $successMessage = 'Leg deleted successfully.';
+    }
+}
+
+/* ------------ HANDLE FORM SUBMITS ------------ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_flight'])) {
+    $flightName = trim((string)$_POST['flight_name']);
+
+    if ($db->flightNameExists($flightName)) {
+        $errorMessage = 'This flight name already exists.';
+    } else {
+        $db->addFlight($flightName);
+        header('Location: index.php?success=flight_added');
+        exit;
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_leg'])) {
+    $flightId = (int)$_POST['flight_id'];
+    $legId = (int)$_POST['leg_id'];
+
+    $db->deleteLeg($legId);
+    header('Location: index.php?flight_id=' . $flightId . '&success=leg_deleted');
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_leg'])) {
+    $flightId = (int)$_POST['flight_id'];
+    $legNumber = (int)$_POST['leg_number'];
+
+    if ($db->legNumberExistsInFlight($flightId, $legNumber)) {
+        $errorMessage = 'This leg number already exists in the selected flight.';
+        $selectedFlightId = $flightId;
+    } else {
+        $db->addLeg(
+            $flightId,
+            $legNumber,
+            (float)$_POST['heading_var'],
+            (float)$_POST['wind_w'],
+            (float)$_POST['wind_v'],
+            (float)$_POST['direction_tt'],
+            (float)$_POST['distance_interval'],
+            (float)$_POST['tas'],
+            (string)$_POST['schedule_eto'],
+            (string)$_POST['schedule_reto'],
+            (string)$_POST['schedule_ato'],
+            (string)$_POST['altfl_mef'],
+            (string)$_POST['altfl_cruise'],
+            (string)$_POST['chkp_checkpoint'],
+            (string)$_POST['chkp_freq']
+        );
+
+        header('Location: index.php?flight_id=' . $flightId . '&success=leg_added');
+        exit;
+    }
 }
 
 /* ------------ GET LEGS FROM THE DATABASE ------------ */
@@ -99,6 +143,24 @@ $lastIndex = $legArray->count() - 1;
             padding: 20px;
             border: 1px solid #ccc;
             border-radius: 8px;
+        }
+        .error-message {
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 1px solid #cc0000;
+            border-radius: 6px;
+            background-color: #ffe6e6;
+            color: #990000;
+            max-width: 700px;
+        }
+        .success-message {
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 1px solid #1f7a1f;
+            border-radius: 6px;
+            background-color: #e6ffe6;
+            color: #145214;
+            max-width: 700px;
         }
 
         .form-grid {
@@ -152,6 +214,31 @@ $lastIndex = $legArray->count() - 1;
 <body>
 
 <h1>NAVLOG</h1>
+<?php if ($errorMessage !== ''): ?>
+    <div class="error-message">
+        <?= htmlspecialchars($errorMessage); ?>
+    </div>
+<?php endif; ?>
+<?php if ($successMessage !== ''): ?>
+    <div class="success-message">
+        <?= htmlspecialchars($successMessage); ?>
+    </div>
+<?php endif; ?>
+
+<div class="form-section">
+    <h2>Add Flight</h2>
+
+    <form method="post" action="index.php">
+        <div class="form-group">
+            <label for="flight_name">Flight Name</label>
+            <input type="text" id="flight_name" name="flight_name" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" name="create_flight">Add Flight</button>
+        </div>
+    </form>
+</div>
 
 <div class="form-section">
     <h2>Select Flight</h2>
@@ -249,9 +336,27 @@ $lastIndex = $legArray->count() - 1;
         </div>
 
         <div class="form-actions">
-            <button type="submit">Add Leg</button>
+            <button type="submit" name="add_leg">Add Leg</button>
         </div>
     </form>
+</div>
+
+<div class="form-section">
+    <h2>Delete Leg</h2>
+
+    <?php if (count($legsFromDb) === 0): ?>
+        <p>No legs found for the selected flight.</p>
+    <?php else: ?>
+        <?php foreach ($legsFromDb as $row): ?>
+            <form method="post" action="index.php?flight_id=<?= $selectedFlightId; ?>" style="margin-bottom: 10px;">
+                <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
+                <input type="hidden" name="leg_id" value="<?= (int)$row['id']; ?>">
+                <button type="submit" name="delete_leg">
+                    Delete Leg <?= (int)$row['leg_number']; ?> - <?= htmlspecialchars($row['chkp_checkpoint']); ?>
+                </button>
+            </form>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <hr>

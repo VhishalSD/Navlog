@@ -74,6 +74,69 @@ class Database
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+
+    /* =================================================
+       LEG NUMBER EXISTS IN FLIGHT
+       Checks if a leg number already exists
+       inside one flight.
+    ================================================= */
+
+    public function legNumberExistsInFlight($flightId, $legNumber)
+    {
+        $sql = "SELECT COUNT(*) FROM Leg WHERE flight_id = :flight_id AND leg_number = :leg_number";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            'flight_id' => $flightId,
+            'leg_number' => $legNumber
+        ]);
+
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /* =================================================
+       FLIGHT NAME EXISTS
+       Checks if a flight name already exists.
+    ================================================= */
+
+    public function flightNameExists($flightName)
+    {
+        $sql = "SELECT COUNT(*) FROM Flight WHERE flight_name = :flight_name";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            'flight_name' => $flightName
+        ]);
+
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /* =================================================
+       ADD FLIGHT
+       Saves one flight in the database.
+    ================================================= */
+
+    public function addFlight($flightName)
+    {
+        $sql = "INSERT INTO Flight (flight_name) VALUES (:flight_name)";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            'flight_name' => $flightName
+        ]);
+    }
+
+    /* =================================================
+       DELETE LEG
+       Deletes one leg by its ID.
+    ================================================= */
+
+    public function deleteLeg($legId)
+    {
+        $sql = "DELETE FROM Leg WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            'id' => $legId
+        ]);
+    }
+
     /* =================================================
        ADD LEG
        Saves one leg in the database.
