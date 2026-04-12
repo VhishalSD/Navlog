@@ -124,6 +124,66 @@ class Database
     }
 
     /* =================================================
+       GET LEG BY ID
+       Gets one leg by its ID.
+    ================================================= */
+
+    public function getLegById($legId)
+    {
+        $sql = "SELECT * FROM Leg WHERE id = :id";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            'id' => $legId
+        ]);
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /* =================================================
+       UPDATE LEG
+       Updates one leg by its ID.
+    ================================================= */
+
+    public function updateLeg($legId, $legNumber, $headingVar, $windW, $windV, $directionTT, $distanceInterval, $tas, $scheduleETO, $scheduleRETO, $scheduleATO, $altFlMEF, $altFlCruise, $chkpCheckpoint, $chkpFreq)
+    {
+        $sql = "UPDATE Leg SET
+                    leg_number = :leg_number,
+                    heading_var = :heading_var,
+                    wind_w = :wind_w,
+                    wind_v = :wind_v,
+                    direction_tt = :direction_tt,
+                    distance_interval = :distance_interval,
+                    tas = :tas,
+                    schedule_eto = :schedule_eto,
+                    schedule_reto = :schedule_reto,
+                    schedule_ato = :schedule_ato,
+                    altfl_mef = :altfl_mef,
+                    altfl_cruise = :altfl_cruise,
+                    chkp_checkpoint = :chkp_checkpoint,
+                    chkp_freq = :chkp_freq
+                WHERE id = :id";
+
+        $stmt = $this->conn->prepare($sql);
+        return $stmt->execute([
+            'id' => $legId,
+            'leg_number' => $legNumber,
+            'heading_var' => $headingVar,
+            'wind_w' => $windW,
+            'wind_v' => $windV,
+            'direction_tt' => $directionTT,
+            'distance_interval' => $distanceInterval,
+            'tas' => $tas,
+            'schedule_eto' => $scheduleETO,
+            'schedule_reto' => $scheduleRETO,
+            'schedule_ato' => $scheduleATO,
+            'altfl_mef' => $altFlMEF,
+            'altfl_cruise' => $altFlCruise,
+            'chkp_checkpoint' => $chkpCheckpoint,
+            'chkp_freq' => $chkpFreq
+        ]);
+    }
+
+    /* =================================================
        DELETE LEG
        Deletes one leg by its ID.
     ================================================= */

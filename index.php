@@ -27,6 +27,8 @@ $flights = $db->getFlights();
 $selectedFlightId = isset($_GET['flight_id']) ? (int)$_GET['flight_id'] : 1;
 $errorMessage = '';
 $successMessage = '';
+$editLegData = null;
+$editLegId = isset($_GET['edit_leg_id']) ? (int)$_GET['edit_leg_id'] : 0;
 
 if (isset($_GET['success'])) {
     if ($_GET['success'] === 'flight_added') {
@@ -38,6 +40,9 @@ if (isset($_GET['success'])) {
     }
     if ($_GET['success'] === 'leg_deleted') {
         $successMessage = 'Leg deleted successfully.';
+    }
+    if ($_GET['success'] === 'leg_updated') {
+        $successMessage = 'Leg updated successfully.';
     }
 }
 
@@ -52,6 +57,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_flight'])) {
         header('Location: index.php?success=flight_added');
         exit;
     }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_leg'])) {
+    $flightId = (int)$_POST['flight_id'];
+    $legId = (int)$_POST['leg_id'];
+
+    $db->updateLeg(
+        $legId,
+        (int)$_POST['leg_number'],
+        (float)$_POST['heading_var'],
+        (float)$_POST['wind_w'],
+        (float)$_POST['wind_v'],
+        (float)$_POST['direction_tt'],
+        (float)$_POST['distance_interval'],
+        (float)$_POST['tas'],
+        (string)$_POST['schedule_eto'],
+        (string)$_POST['schedule_reto'],
+        (string)$_POST['schedule_ato'],
+        (string)$_POST['altfl_mef'],
+        (string)$_POST['altfl_cruise'],
+        (string)$_POST['chkp_checkpoint'],
+        (string)$_POST['chkp_freq']
+    );
+
+    header('Location: index.php?flight_id=' . $flightId . '&success=leg_updated');
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_leg'])) {
@@ -92,6 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_leg'])) {
         header('Location: index.php?flight_id=' . $flightId . '&success=leg_added');
         exit;
     }
+}
+
+/* ------------ GET THE LEG THAT WILL BE EDITED ------------ */
+if ($editLegId > 0) {
+    $editLegData = $db->getLegById($editLegId);
 }
 
 /* ------------ GET LEGS FROM THE DATABASE ------------ */
@@ -258,85 +294,86 @@ $lastIndex = $legArray->count() - 1;
 </div>
 
 <div class="form-section">
-    <h2>Add Leg</h2>
+    <h2><?= $editLegData ? 'Edit Leg' : 'Add Leg'; ?></h2>
 
     <form method="post" action="index.php">
         <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
+        <input type="hidden" name="leg_id" value="<?= $editLegData ? (int)$editLegData['id'] : 0; ?>">
 
         <div class="form-grid">
             <div class="form-group">
                 <label for="leg_number">Leg Number</label>
-                <input type="number" id="leg_number" name="leg_number" required>
+                <input type="number" id="leg_number" name="leg_number" value="<?= $editLegData ? htmlspecialchars($editLegData['leg_number']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="heading_var">Heading Variation</label>
-                <input type="number" step="0.01" id="heading_var" name="heading_var" required>
+                <input type="number" step="0.01" id="heading_var" name="heading_var" value="<?= $editLegData ? htmlspecialchars($editLegData['heading_var']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="wind_w">Wind W</label>
-                <input type="number" step="0.01" id="wind_w" name="wind_w" required>
+                <input type="number" step="0.01" id="wind_w" name="wind_w" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_w']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="wind_v">Wind V</label>
-                <input type="number" step="0.01" id="wind_v" name="wind_v" required>
+                <input type="number" step="0.01" id="wind_v" name="wind_v" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_v']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="direction_tt">Direction TT</label>
-                <input type="number" step="0.01" id="direction_tt" name="direction_tt" required>
+                <input type="number" step="0.01" id="direction_tt" name="direction_tt" value="<?= $editLegData ? htmlspecialchars($editLegData['direction_tt']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="distance_interval">Distance Interval</label>
-                <input type="number" step="0.01" id="distance_interval" name="distance_interval" required>
+                <input type="number" step="0.01" id="distance_interval" name="distance_interval" value="<?= $editLegData ? htmlspecialchars($editLegData['distance_interval']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="tas">TAS</label>
-                <input type="number" step="0.01" id="tas" name="tas" required>
+                <input type="number" step="0.01" id="tas" name="tas" value="<?= $editLegData ? htmlspecialchars($editLegData['tas']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="schedule_eto">Schedule ETO</label>
-                <input type="text" id="schedule_eto" name="schedule_eto" required>
+                <input type="text" id="schedule_eto" name="schedule_eto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_eto']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="schedule_reto">Schedule RETO</label>
-                <input type="text" id="schedule_reto" name="schedule_reto" required>
+                <input type="text" id="schedule_reto" name="schedule_reto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_reto']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="schedule_ato">Schedule ATO</label>
-                <input type="text" id="schedule_ato" name="schedule_ato" required>
+                <input type="text" id="schedule_ato" name="schedule_ato" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_ato']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="altfl_mef">Alt/FL MEF</label>
-                <input type="text" id="altfl_mef" name="altfl_mef" required>
+                <input type="text" id="altfl_mef" name="altfl_mef" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_mef']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="altfl_cruise">Alt/FL Cruise</label>
-                <input type="text" id="altfl_cruise" name="altfl_cruise" required>
+                <input type="text" id="altfl_cruise" name="altfl_cruise" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_cruise']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="chkp_checkpoint">Checkpoint</label>
-                <input type="text" id="chkp_checkpoint" name="chkp_checkpoint" required>
+                <input type="text" id="chkp_checkpoint" name="chkp_checkpoint" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_checkpoint']) : ''; ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="chkp_freq">Checkpoint Frequency</label>
-                <input type="text" id="chkp_freq" name="chkp_freq" required>
+                <input type="text" id="chkp_freq" name="chkp_freq" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_freq']) : ''; ?>" required>
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" name="add_leg">Add Leg</button>
+            <button type="submit" name="<?= $editLegData ? 'update_leg' : 'add_leg'; ?>"><?= $editLegData ? 'Update Leg' : 'Add Leg'; ?></button>
         </div>
     </form>
 </div>
@@ -348,6 +385,9 @@ $lastIndex = $legArray->count() - 1;
         <p>No legs found for the selected flight.</p>
     <?php else: ?>
         <?php foreach ($legsFromDb as $row): ?>
+            <p style="margin-bottom: 6px;">
+                <a href="index.php?flight_id=<?= $selectedFlightId; ?>&edit_leg_id=<?= (int)$row['id']; ?>">Edit Leg <?= (int)$row['leg_number']; ?> - <?= htmlspecialchars($row['chkp_checkpoint']); ?></a>
+            </p>
             <form method="post" action="index.php?flight_id=<?= $selectedFlightId; ?>" style="margin-bottom: 10px;">
                 <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
                 <input type="hidden" name="leg_id" value="<?= (int)$row['id']; ?>">
