@@ -48,6 +48,19 @@ class Database
     }
 
     /* =================================================
+       GET FLIGHTS
+       Gets all flights from the database.
+    ================================================= */
+
+    public function getFlights()
+    {
+        $sql = "SELECT * FROM Flight ORDER BY id ASC";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /* =================================================
        GET LEGS BY FLIGHT ID
        Gets all legs that belong to one flight.
        The legs are sorted by leg number.
