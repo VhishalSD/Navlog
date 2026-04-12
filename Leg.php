@@ -1,16 +1,34 @@
 <?php
+/* =================================================
+   LEG CLASS
+   This class stores one leg and
+   calculates the NAVLOG values.
+================================================= */
 class Leg
 {
+    /* ------------ LEG DATA ------------ */
     private float $headingVar;
     private float $windW;
     private float $windV;
     private float $directionTT;
     private float $distanceInterval;
     private float $TAS;
+    private string $scheduleETO;
+    private string $scheduleRETO;
+    private string $scheduleATO;
+    private string $altFlMEF;
+    private string $altFlCruise;
+    private string $chkpCheckpoint;
+    private string $chkpFreq;
     private int $leg;
 
+    /* ------------ CALCULATED VALUES ------------ */
     private ?float $headingTH = null;
 
+    /* =================================================
+       CONSTRUCTOR
+       Stores all values for one leg.
+    ================================================= */
     public function __construct(
         int $leg,
         float $headingVar,
@@ -18,7 +36,14 @@ class Leg
         float $windV,
         float $directionTT,
         float $distanceInterval,
-        float $TAS
+        float $TAS,
+        string $scheduleETO,
+        string $scheduleRETO,
+        string $scheduleATO,
+        string $altFlMEF,
+        string $altFlCruise,
+        string $chkpCheckpoint,
+        string $chkpFreq
     ) {
         $this->leg = $leg;
         $this->headingVar = $headingVar;
@@ -27,8 +52,19 @@ class Leg
         $this->directionTT = $directionTT;
         $this->distanceInterval = $distanceInterval;
         $this->TAS = $TAS;
+        $this->scheduleETO = $scheduleETO;
+        $this->scheduleRETO = $scheduleRETO;
+        $this->scheduleATO = $scheduleATO;
+        $this->altFlMEF = $altFlMEF;
+        $this->altFlCruise = $altFlCruise;
+        $this->chkpCheckpoint = $chkpCheckpoint;
+        $this->chkpFreq = $chkpFreq;
     }
 
+    /* =================================================
+       PRINT TABLE HEAD
+       Shows the table header.
+    ================================================= */
     public function printTableHead()
     {
         echo'
@@ -71,7 +107,11 @@ class Leg
     }
 
 
-    
+
+    /* =================================================
+       PRINT LEG
+       Shows one leg as a table row.
+    ================================================= */
     public function printLeg(bool $withTableHead = false, bool $withTableFoot = false, ?int $timeAcc = null, ?float $distanceAcc = null): void
     {
         if ($withTableHead)
@@ -81,13 +121,13 @@ class Leg
                 <td>'.$this->leg.'</td>
                 <td>'.$timeAcc .'</td>
                 <td>'.$this->calculateTimeInterval().'</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
-                <td>Handmatige invoer</td>
+                <td>'.$this->scheduleETO.'</td>
+                <td>'.$this->scheduleRETO.'</td>
+                <td>'.$this->scheduleATO.'</td>
+                <td>'.$this->altFlMEF.'</td>
+                <td>'.$this->altFlCruise.'</td>
+                <td>'.$this->chkpCheckpoint.'</td>
+                <td>'.$this->chkpFreq.'</td>
                 <td>'.round($this->calculateHeadingMH()).'</td>
                 <td>'.$this->headingVar.'</td>
                 <td>'. round($this->calculateHeadingTH())  .'</td>
@@ -105,21 +145,29 @@ class Leg
         }
     }
 
+    /* =================================================
+       CALCULATE HEADING WCA
+       Calculates the wind correction angle.
+    ================================================= */
     public function calculateHeadingWCA(): float
     {
-        // JS: (windV * sin((directionTT - (windW - 180)) * PI/180)) / TAS
+        // Formula from the JavaScript version.
         $angleDeg = $this->directionTT - ($this->windW - 180.0);
         $angleRad = deg2rad($angleDeg);
 
         $radians = ($this->windV * sin($angleRad)) / $this->TAS;
 
-        // Eventueel clampen om asin-domain errors te voorkomen door floating point ruis
+        // Prevents small floating point errors in asin().
         $radians = max(-1.0, min(1.0, $radians));
 
         $headingWCA = rad2deg(asin($radians));
         return $headingWCA;
     }
 
+    /* =================================================
+       CALCULATE HEADING TH
+       Calculates the true heading.
+    ================================================= */
     public function calculateHeadingTH(): float
     {
         $headingWCA = $this->calculateHeadingWCA();
@@ -135,6 +183,10 @@ class Leg
         return $this->headingTH;
     }
 
+    /* =================================================
+       CALCULATE GROUND SPEED
+       Calculates the ground speed.
+    ================================================= */
     public function calculateGroundSpeed() {
         $groundSpeed = 4;
 
@@ -157,6 +209,10 @@ class Leg
         return $groundSpeed;
     }
 
+    /* =================================================
+       CALCULATE HEADING MH
+       Calculates the magnetic heading.
+    ================================================= */
     function calculateHeadingMH() {
         $headingMH = 2;
 
@@ -173,16 +229,28 @@ class Leg
         return $headingMH;
     }
 
+    /* =================================================
+       CALCULATE TIME INTERVAL
+       Calculates the time for one leg.
+    ================================================= */
     function calculateTimeInterval()
     {
         return round($this->distanceInterval / $this->calculateGroundSpeed() * 60);
     }
 
+    /* =================================================
+       GET DISTANCE INTERVAL
+       Returns the distance interval.
+    ================================================= */
     public function getDistanceInterval(): float
     {
         return $this->distanceInterval;
     }
 
+    /* =================================================
+       GET TIME INTERVAL
+       Returns the calculated time interval.
+    ================================================= */
     public function getTimeInterval(): int
     {
         return $this->calculateTimeInterval();
