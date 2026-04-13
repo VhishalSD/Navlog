@@ -60,30 +60,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_flight'])) {
     }
 }
 
+/* ------------ HANDLE LEG UPDATE SUBMIT ------------ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_leg'])) {
     $flightId = (int)$_POST['flight_id'];
     $legId = (int)$_POST['leg_id'];
+    $legNumber = (int)$_POST['leg_number'];
+    $existingLeg = $db->getLegById($legId);
 
-    $db->updateLeg(
-        $legId,
-        (int)$_POST['leg_number'],
-        (float)$_POST['heading_var'],
-        (float)$_POST['wind_w'],
-        (float)$_POST['wind_v'],
-        (float)$_POST['direction_tt'],
-        (float)$_POST['distance_interval'],
-        (float)$_POST['tas'],
-        (string)$_POST['schedule_eto'],
-        (string)$_POST['schedule_reto'],
-        (string)$_POST['schedule_ato'],
-        (string)$_POST['altfl_mef'],
-        (string)$_POST['altfl_cruise'],
-        (string)$_POST['chkp_checkpoint'],
-        (string)$_POST['chkp_freq']
-    );
+    if (
+        $db->legNumberExistsInFlight($flightId, $legNumber)
+        && $existingLeg
+        && (int)$existingLeg['leg_number'] !== $legNumber
+    ) {
+        $errorMessage = 'This leg number already exists in the selected flight.';
+        $selectedFlightId = $flightId;
+        $editLegData = $existingLeg;
+        $editLegData['leg_number'] = $legNumber;
+        $editLegData['heading_var'] = (float)$_POST['heading_var'];
+        $editLegData['wind_w'] = (float)$_POST['wind_w'];
+        $editLegData['wind_v'] = (float)$_POST['wind_v'];
+        $editLegData['direction_tt'] = (float)$_POST['direction_tt'];
+        $editLegData['distance_interval'] = (float)$_POST['distance_interval'];
+        $editLegData['tas'] = (float)$_POST['tas'];
+        $editLegData['schedule_eto'] = (string)$_POST['schedule_eto'];
+        $editLegData['schedule_reto'] = (string)$_POST['schedule_reto'];
+        $editLegData['schedule_ato'] = (string)$_POST['schedule_ato'];
+        $editLegData['altfl_mef'] = (string)$_POST['altfl_mef'];
+        $editLegData['altfl_cruise'] = (string)$_POST['altfl_cruise'];
+        $editLegData['chkp_checkpoint'] = (string)$_POST['chkp_checkpoint'];
+        $editLegData['chkp_freq'] = (string)$_POST['chkp_freq'];
+    } else {
+        $db->updateLeg(
+            $legId,
+            $legNumber,
+            (float)$_POST['heading_var'],
+            (float)$_POST['wind_w'],
+            (float)$_POST['wind_v'],
+            (float)$_POST['direction_tt'],
+            (float)$_POST['distance_interval'],
+            (float)$_POST['tas'],
+            (string)$_POST['schedule_eto'],
+            (string)$_POST['schedule_reto'],
+            (string)$_POST['schedule_ato'],
+            (string)$_POST['altfl_mef'],
+            (string)$_POST['altfl_cruise'],
+            (string)$_POST['chkp_checkpoint'],
+            (string)$_POST['chkp_freq']
+        );
 
-    header('Location: index.php?flight_id=' . $flightId . '&success=leg_updated');
-    exit;
+        header('Location: index.php?flight_id=' . $flightId . '&success=leg_updated');
+        exit;
+    }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_leg'])) {
