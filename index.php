@@ -27,6 +27,7 @@ $flights = $db->getFlights();
 $selectedFlightId = isset($_GET['flight_id']) ? (int)$_GET['flight_id'] : 1;
 $errorMessage = '';
 $successMessage = '';
+/* ------------ HANDLE SUCCESS MESSAGES ------------ */
 $editLegData = null;
 $editLegId = isset($_GET['edit_leg_id']) ? (int)$_GET['edit_leg_id'] : 0;
 
@@ -170,38 +171,78 @@ $lastIndex = $legArray->count() - 1;
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 24px;
+            background-color: #f5f7fa;
+            color: #1f2933;
+        }
+
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-title {
+            margin: 0 0 20px 0;
+        }
+
+        .message-stack {
+            margin-bottom: 20px;
+        }
+
+        .layout-grid {
+            display: block;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .form-section {
-            max-width: 700px;
-            margin-bottom: 30px;
+            background-color: #ffffff;
             padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-        }
-        .error-message {
+            border: 1px solid #d9e2ec;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
             margin-bottom: 20px;
+        }
+
+        .form-section h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .error-message {
+            margin-bottom: 12px;
             padding: 12px;
             border: 1px solid #cc0000;
             border-radius: 6px;
             background-color: #ffe6e6;
             color: #990000;
-            max-width: 700px;
         }
+
         .success-message {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             padding: 12px;
             border: 1px solid #1f7a1f;
             border-radius: 6px;
             background-color: #e6ffe6;
             color: #145214;
-            max-width: 700px;
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 15px 20px;
         }
 
@@ -212,208 +253,350 @@ $lastIndex = $legArray->count() - 1;
 
         .form-group label {
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
 
         .form-group input,
         .form-group select {
-            padding: 8px;
+            padding: 10px;
             font-size: 14px;
+            border: 1px solid #bcccdc;
+            border-radius: 6px;
+            background-color: #fff;
+            box-sizing: border-box;
         }
 
         .form-actions {
             margin-top: 20px;
         }
 
-        .form-actions button {
+        .form-actions button,
+        .action-link,
+        .delete-button {
             padding: 10px 16px;
             font-size: 14px;
+            border: none;
+            border-radius: 6px;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        h1, h2 {
-            margin-bottom: 15px;
+        .form-actions button {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+
+        .action-link {
+            background-color: #eef2ff;
+            color: #1d4ed8;
+        }
+
+        .delete-button {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .leg-action-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .leg-action-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+            background-color: #fafbfc;
+        }
+
+        .leg-action-info {
+            font-weight: bold;
+        }
+
+        .leg-action-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .empty-state {
+            margin: 0;
+            color: #52606d;
+        }
+
+        .table-section {
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #d9e2ec;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+            overflow-x: auto;
+        }
+
+        .table-section h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+        .table-description {
+            margin-top: 0;
+            margin-bottom: 14px;
+            color: #52606d;
+            font-size: 14px;
         }
 
         table {
-            width: 100%;
+            width: max-content;
+            min-width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 0;
+            background-color: #ffffff;
+            font-size: 13px;
         }
 
-        th, td {
-            padding: 6px;
+        th,
+        td {
+            padding: 8px;
             text-align: left;
+            border: 1px solid #d9e2ec;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #f0f4f8;
+        }
+
+        hr {
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .leg-action-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
 <body>
 
-<h1>NAVLOG</h1>
-<?php if ($errorMessage !== ''): ?>
-    <div class="error-message">
-        <?= htmlspecialchars($errorMessage); ?>
-    </div>
-<?php endif; ?>
-<?php if ($successMessage !== ''): ?>
-    <div class="success-message">
-        <?= htmlspecialchars($successMessage); ?>
-    </div>
-<?php endif; ?>
+<!-- ------------ PAGE LAYOUT ------------ -->
+<div class="page-container">
+    <h1 class="page-title">NAVLOG</h1>
 
-<div class="form-section">
-    <h2>Add Flight</h2>
+    <!-- ------------ MESSAGE AREA ------------ -->
+    <div class="message-stack">
+        <?php if ($errorMessage !== ''): ?>
+            <div class="error-message">
+                <?= htmlspecialchars($errorMessage); ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($successMessage !== ''): ?>
+            <div class="success-message">
+                <?= htmlspecialchars($successMessage); ?>
+            </div>
+        <?php endif; ?>
+    </div>
 
-    <form method="post" action="index.php">
-        <div class="form-group">
-            <label for="flight_name">Flight Name</label>
-            <input type="text" id="flight_name" name="flight_name" required>
+    <!-- ------------ MAIN PAGE GRID ------------ -->
+    <div class="layout-grid">
+        <div class="sidebar">
+            <!-- ------------ ADD FLIGHT SECTION ------------ -->
+            <div class="form-section">
+                <h2>Add Flight</h2>
+
+                <form method="post" action="index.php">
+                    <div class="form-group">
+                        <label for="flight_name">Flight Name</label>
+                        <input type="text" id="flight_name" name="flight_name" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" name="create_flight">Add Flight</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ------------ SELECT FLIGHT SECTION ------------ -->
+            <div class="form-section">
+                <h2>Select Flight</h2>
+
+                <form method="get" action="index.php">
+                    <div class="form-group">
+                        <label for="flight_id">Flight</label>
+                        <select id="flight_id" name="flight_id" onchange="this.form.submit()">
+                            <?php foreach ($flights as $flight): ?>
+                                <option value="<?= (int)$flight['id']; ?>" <?= $selectedFlightId === (int)$flight['id'] ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars($flight['flight_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ------------ ADD OR EDIT LEG SECTION ------------ -->
+            <div class="form-section">
+                <h2><?= $editLegData ? 'Edit Leg' : 'Add Leg'; ?></h2>
+
+                <form method="post" action="index.php">
+                    <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
+                    <input type="hidden" name="leg_id" value="<?= $editLegData ? (int)$editLegData['id'] : 0; ?>">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="leg_number">Leg Number</label>
+                            <input type="number" id="leg_number" name="leg_number" value="<?= $editLegData ? htmlspecialchars($editLegData['leg_number']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="heading_var">Heading Variation</label>
+                            <input type="number" step="0.01" id="heading_var" name="heading_var" value="<?= $editLegData ? htmlspecialchars($editLegData['heading_var']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wind_w">Wind W</label>
+                            <input type="number" step="0.01" id="wind_w" name="wind_w" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_w']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="wind_v">Wind V</label>
+                            <input type="number" step="0.01" id="wind_v" name="wind_v" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_v']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="direction_tt">Direction TT</label>
+                            <input type="number" step="0.01" id="direction_tt" name="direction_tt" value="<?= $editLegData ? htmlspecialchars($editLegData['direction_tt']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="distance_interval">Distance Interval</label>
+                            <input type="number" step="0.01" id="distance_interval" name="distance_interval" value="<?= $editLegData ? htmlspecialchars($editLegData['distance_interval']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tas">TAS</label>
+                            <input type="number" step="0.01" id="tas" name="tas" value="<?= $editLegData ? htmlspecialchars($editLegData['tas']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="schedule_eto">Schedule ETO</label>
+                            <input type="text" id="schedule_eto" name="schedule_eto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_eto']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="schedule_reto">Schedule RETO</label>
+                            <input type="text" id="schedule_reto" name="schedule_reto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_reto']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="schedule_ato">Schedule ATO</label>
+                            <input type="text" id="schedule_ato" name="schedule_ato" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_ato']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="altfl_mef">Alt/FL MEF</label>
+                            <input type="text" id="altfl_mef" name="altfl_mef" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_mef']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="altfl_cruise">Alt/FL Cruise</label>
+                            <input type="text" id="altfl_cruise" name="altfl_cruise" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_cruise']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chkp_checkpoint">Checkpoint</label>
+                            <input type="text" id="chkp_checkpoint" name="chkp_checkpoint" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_checkpoint']) : ''; ?>" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="chkp_freq">Checkpoint Frequency</label>
+                            <input type="text" id="chkp_freq" name="chkp_freq" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_freq']) : ''; ?>" required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" name="<?= $editLegData ? 'update_leg' : 'add_leg'; ?>"><?= $editLegData ? 'Update Leg' : 'Add Leg'; ?></button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ------------ MANAGE LEGS SECTION ------------ -->
+            <div class="form-section">
+                <h2>Manage Legs</h2>
+
+                <?php if (count($legsFromDb) === 0): ?>
+                    <p class="empty-state">No legs found for the selected flight.</p>
+                <?php else: ?>
+                    <div class="leg-action-list">
+                        <?php foreach ($legsFromDb as $row): ?>
+                            <div class="leg-action-item">
+                                <div class="leg-action-info">
+                                    Leg <?= (int)$row['leg_number']; ?> - <?= htmlspecialchars($row['chkp_checkpoint']); ?>
+                                </div>
+                                <div class="leg-action-buttons">
+                                    <a class="action-link" href="index.php?flight_id=<?= $selectedFlightId; ?>&edit_leg_id=<?= (int)$row['id']; ?>">Edit</a>
+                                    <form method="post" action="index.php?flight_id=<?= $selectedFlightId; ?>">
+                                        <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
+                                        <input type="hidden" name="leg_id" value="<?= (int)$row['id']; ?>">
+                                        <button class="delete-button" type="submit" name="delete_leg">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
 
-        <div class="form-actions">
-            <button type="submit" name="create_flight">Add Flight</button>
-        </div>
-    </form>
-</div>
+        <div class="content">
+            <!-- ------------ LEG OVERVIEW TABLE SECTION ------------ -->
+            <div class="table-section">
+                <h2>Leg Overview</h2>
+                <p class="table-description">Scroll horizontally to see all NAVLOG columns.</p>
 
-<div class="form-section">
-    <h2>Select Flight</h2>
+                <?php foreach ($legArray->all() as $index => $leg): ?>
+                    <?php
+                    $timeAcc = $legArray->timeAccSpecialByIndex($index);
+                    $distanceAcc = $legArray->distanceAccSpecialByIndex($index);
 
-    <form method="get" action="index.php">
-        <div class="form-group">
-            <label for="flight_id">Flight</label>
-            <select id="flight_id" name="flight_id" onchange="this.form.submit()">
-                <?php foreach ($flights as $flight): ?>
-                    <option value="<?= (int)$flight['id']; ?>" <?= $selectedFlightId === (int)$flight['id'] ? 'selected' : ''; ?>>
-                        <?= htmlspecialchars($flight['flight_name']); ?>
-                    </option>
+                    $leg->printLeg(
+                        $index === 0,
+                        $index === $lastIndex,
+                        $timeAcc,
+                        $distanceAcc
+                    );
+                    ?>
                 <?php endforeach; ?>
-            </select>
-        </div>
-    </form>
-</div>
-
-<div class="form-section">
-    <h2><?= $editLegData ? 'Edit Leg' : 'Add Leg'; ?></h2>
-
-    <form method="post" action="index.php">
-        <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
-        <input type="hidden" name="leg_id" value="<?= $editLegData ? (int)$editLegData['id'] : 0; ?>">
-
-        <div class="form-grid">
-            <div class="form-group">
-                <label for="leg_number">Leg Number</label>
-                <input type="number" id="leg_number" name="leg_number" value="<?= $editLegData ? htmlspecialchars($editLegData['leg_number']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="heading_var">Heading Variation</label>
-                <input type="number" step="0.01" id="heading_var" name="heading_var" value="<?= $editLegData ? htmlspecialchars($editLegData['heading_var']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="wind_w">Wind W</label>
-                <input type="number" step="0.01" id="wind_w" name="wind_w" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_w']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="wind_v">Wind V</label>
-                <input type="number" step="0.01" id="wind_v" name="wind_v" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_v']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="direction_tt">Direction TT</label>
-                <input type="number" step="0.01" id="direction_tt" name="direction_tt" value="<?= $editLegData ? htmlspecialchars($editLegData['direction_tt']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="distance_interval">Distance Interval</label>
-                <input type="number" step="0.01" id="distance_interval" name="distance_interval" value="<?= $editLegData ? htmlspecialchars($editLegData['distance_interval']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="tas">TAS</label>
-                <input type="number" step="0.01" id="tas" name="tas" value="<?= $editLegData ? htmlspecialchars($editLegData['tas']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="schedule_eto">Schedule ETO</label>
-                <input type="text" id="schedule_eto" name="schedule_eto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_eto']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="schedule_reto">Schedule RETO</label>
-                <input type="text" id="schedule_reto" name="schedule_reto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_reto']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="schedule_ato">Schedule ATO</label>
-                <input type="text" id="schedule_ato" name="schedule_ato" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_ato']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="altfl_mef">Alt/FL MEF</label>
-                <input type="text" id="altfl_mef" name="altfl_mef" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_mef']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="altfl_cruise">Alt/FL Cruise</label>
-                <input type="text" id="altfl_cruise" name="altfl_cruise" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_cruise']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="chkp_checkpoint">Checkpoint</label>
-                <input type="text" id="chkp_checkpoint" name="chkp_checkpoint" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_checkpoint']) : ''; ?>" required>
-            </div>
-
-            <div class="form-group">
-                <label for="chkp_freq">Checkpoint Frequency</label>
-                <input type="text" id="chkp_freq" name="chkp_freq" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_freq']) : ''; ?>" required>
             </div>
         </div>
-
-        <div class="form-actions">
-            <button type="submit" name="<?= $editLegData ? 'update_leg' : 'add_leg'; ?>"><?= $editLegData ? 'Update Leg' : 'Add Leg'; ?></button>
-        </div>
-    </form>
+    </div>
 </div>
 
-<div class="form-section">
-    <h2>Delete Leg</h2>
+<!-- ------------ PAGE SCRIPTS ------------ -->
+<!-- ------------ REMOVE SUCCESS PARAMETER FROM URL ------------ -->
+<script>
+    const url = new URL(window.location.href);
 
-    <?php if (count($legsFromDb) === 0): ?>
-        <p>No legs found for the selected flight.</p>
-    <?php else: ?>
-        <?php foreach ($legsFromDb as $row): ?>
-            <p style="margin-bottom: 6px;">
-                <a href="index.php?flight_id=<?= $selectedFlightId; ?>&edit_leg_id=<?= (int)$row['id']; ?>">Edit Leg <?= (int)$row['leg_number']; ?> - <?= htmlspecialchars($row['chkp_checkpoint']); ?></a>
-            </p>
-            <form method="post" action="index.php?flight_id=<?= $selectedFlightId; ?>" style="margin-bottom: 10px;">
-                <input type="hidden" name="flight_id" value="<?= $selectedFlightId; ?>">
-                <input type="hidden" name="leg_id" value="<?= (int)$row['id']; ?>">
-                <button type="submit" name="delete_leg">
-                    Delete Leg <?= (int)$row['leg_number']; ?> - <?= htmlspecialchars($row['chkp_checkpoint']); ?>
-                </button>
-            </form>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
+    if (url.searchParams.has('success')) {
+        url.searchParams.delete('success');
 
-<hr>
+        const newUrl =
+            url.pathname +
+            (url.searchParams.toString() ? '?' + url.searchParams.toString() : '');
 
-<?php foreach ($legArray->all() as $index => $leg): ?>
-    <?php
-    $timeAcc = $legArray->timeAccSpecialByIndex($index);
-    $distanceAcc = $legArray->distanceAccSpecialByIndex($index);
-
-    $leg->printLeg(
-        $index === 0,
-        $index === $lastIndex,
-        $timeAcc,
-        $distanceAcc
-    );
-    ?>
-<?php endforeach; ?>
-
+        window.history.replaceState({}, document.title, newUrl);
+    }
+</script>
 </body>
 </html>
