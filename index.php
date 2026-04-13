@@ -27,9 +27,13 @@ $flights = $db->getFlights();
 $selectedFlightId = isset($_GET['flight_id']) ? (int)$_GET['flight_id'] : 1;
 $errorMessage = '';
 $successMessage = '';
-/* ------------ HANDLE SUCCESS MESSAGES ------------ */
+$fieldErrors = [];
+
+/* ------------ STORE EDIT STATE ------------ */
 $editLegData = null;
 $editLegId = isset($_GET['edit_leg_id']) ? (int)$_GET['edit_leg_id'] : 0;
+
+/* ------------ HANDLE SUCCESS MESSAGES ------------ */
 
 if (isset($_GET['success'])) {
     if ($_GET['success'] === 'flight_added') {
@@ -45,6 +49,73 @@ if (isset($_GET['success'])) {
     if ($_GET['success'] === 'leg_updated') {
         $successMessage = 'Leg updated successfully.';
     }
+}
+
+/* =================================================
+   VALIDATE LEG INPUT
+   Checks if all leg form values are valid.
+================================================= */
+function validateLegInput(array $data): array
+{
+    $errors = [];
+
+    if ((int)$data['leg_number'] <= 0) {
+        $errors['leg_number'] = 'Leg number must be greater than 0.';
+    }
+
+    if (!is_numeric($data['heading_var']) || (float)$data['heading_var'] < -180 || (float)$data['heading_var'] > 180) {
+        $errors['heading_var'] = 'Heading Variation must be between -180 and 180.';
+    }
+
+    if ((float)$data['wind_w'] < 0 || (float)$data['wind_w'] > 360) {
+        $errors['wind_w'] = 'Wind W must be between 0 and 360.';
+    }
+
+    if ((float)$data['wind_v'] < 0) {
+        $errors['wind_v'] = 'Wind V cannot be negative.';
+    }
+
+    if ((float)$data['direction_tt'] < 0 || (float)$data['direction_tt'] > 360) {
+        $errors['direction_tt'] = 'Direction TT must be between 0 and 360.';
+    }
+
+    if ((float)$data['distance_interval'] <= 0) {
+        $errors['distance_interval'] = 'Distance Interval must be greater than 0.';
+    }
+
+    if ((float)$data['tas'] <= 0) {
+        $errors['tas'] = 'TAS must be greater than 0.';
+    }
+
+    if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string)$data['schedule_eto']))) {
+        $errors['schedule_eto'] = 'Schedule ETO must use HH:MM format.';
+    }
+
+    if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string)$data['schedule_reto']))) {
+        $errors['schedule_reto'] = 'Schedule RETO must use HH:MM format.';
+    }
+
+    if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string)$data['schedule_ato']))) {
+        $errors['schedule_ato'] = 'Schedule ATO must use HH:MM format.';
+    }
+
+    if (!is_numeric($data['altfl_mef']) || (float)$data['altfl_mef'] < 0) {
+        $errors['altfl_mef'] = 'Alt/FL MEF must be 0 or higher.';
+    }
+
+    if (!is_numeric($data['altfl_cruise']) || (float)$data['altfl_cruise'] < 0) {
+        $errors['altfl_cruise'] = 'Alt/FL Cruise must be 0 or higher.';
+    }
+
+    if (trim((string)$data['chkp_checkpoint']) === '') {
+        $errors['chkp_checkpoint'] = 'Checkpoint cannot be empty.';
+    }
+
+    if (!preg_match('/^\d{3}\.\d{3}$/', trim((string)$data['chkp_freq']))) {
+        $errors['chkp_freq'] = 'Checkpoint Frequency must use 000.000 format.';
+    }
+
+    return $errors;
 }
 
 /* ------------ HANDLE FORM SUBMITS ------------ */
@@ -66,8 +137,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_leg'])) {
     $legId = (int)$_POST['leg_id'];
     $legNumber = (int)$_POST['leg_number'];
     $existingLeg = $db->getLegById($legId);
+    $fieldErrors = validateLegInput($_POST);
 
-    if (
+    if (!empty($fieldErrors)) {
+        $errorMessage = 'Please fix the highlighted leg fields.';
+        $selectedFlightId = $flightId;
+        $editLegData = $existingLeg;
+        $editLegData['leg_number'] = $legNumber;
+        $editLegData['heading_var'] = (float)$_POST['heading_var'];
+        $editLegData['wind_w'] = (float)$_POST['wind_w'];
+        $editLegData['wind_v'] = (float)$_POST['wind_v'];
+        $editLegData['direction_tt'] = (float)$_POST['direction_tt'];
+        $editLegData['distance_interval'] = (float)$_POST['distance_interval'];
+        $editLegData['tas'] = (float)$_POST['tas'];
+        $editLegData['schedule_eto'] = (string)$_POST['schedule_eto'];
+        $editLegData['schedule_reto'] = (string)$_POST['schedule_reto'];
+        $editLegData['schedule_ato'] = (string)$_POST['schedule_ato'];
+        $editLegData['altfl_mef'] = (string)$_POST['altfl_mef'];
+        $editLegData['altfl_cruise'] = (string)$_POST['altfl_cruise'];
+        $editLegData['chkp_checkpoint'] = (string)$_POST['chkp_checkpoint'];
+        $editLegData['chkp_freq'] = (string)$_POST['chkp_freq'];
+    } elseif (
         $db->legNumberExistsInFlight($flightId, $legNumber)
         && $existingLeg
         && (int)$existingLeg['leg_number'] !== $legNumber
@@ -125,8 +215,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_leg'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_leg'])) {
     $flightId = (int)$_POST['flight_id'];
     $legNumber = (int)$_POST['leg_number'];
+    $fieldErrors = validateLegInput($_POST);
 
-    if ($db->legNumberExistsInFlight($flightId, $legNumber)) {
+    if (!empty($fieldErrors)) {
+        $errorMessage = 'Please fix the highlighted leg fields.';
+        $selectedFlightId = $flightId;
+    } elseif ($db->legNumberExistsInFlight($flightId, $legNumber)) {
         $errorMessage = 'This leg number already exists in the selected flight.';
         $selectedFlightId = $flightId;
     } else {
@@ -291,6 +385,17 @@ $lastIndex = $legArray->count() - 1;
             border-radius: 6px;
             background-color: #fff;
             box-sizing: border-box;
+        }
+
+        .input-error {
+            border: 1px solid #cc0000 !important;
+            background-color: #fff5f5 !important;
+        }
+
+        .field-error {
+            margin-top: 6px;
+            color: #990000;
+            font-size: 13px;
         }
 
         .form-actions {
@@ -483,72 +588,114 @@ $lastIndex = $legArray->count() - 1;
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="leg_number">Leg Number</label>
-                            <input type="number" id="leg_number" name="leg_number" value="<?= $editLegData ? htmlspecialchars($editLegData['leg_number']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['leg_number']) ? 'input-error' : ''; ?>" type="number" id="leg_number" name="leg_number" value="<?= $editLegData ? htmlspecialchars($editLegData['leg_number']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['leg_number'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['leg_number']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="heading_var">Heading Variation</label>
-                            <input type="number" step="0.01" id="heading_var" name="heading_var" value="<?= $editLegData ? htmlspecialchars($editLegData['heading_var']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['heading_var']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="heading_var" name="heading_var" value="<?= $editLegData ? htmlspecialchars($editLegData['heading_var']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['heading_var'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['heading_var']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="wind_w">Wind W</label>
-                            <input type="number" step="0.01" id="wind_w" name="wind_w" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_w']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['wind_w']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="wind_w" name="wind_w" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_w']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['wind_w'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['wind_w']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="wind_v">Wind V</label>
-                            <input type="number" step="0.01" id="wind_v" name="wind_v" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_v']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['wind_v']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="wind_v" name="wind_v" value="<?= $editLegData ? htmlspecialchars($editLegData['wind_v']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['wind_v'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['wind_v']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="direction_tt">Direction TT</label>
-                            <input type="number" step="0.01" id="direction_tt" name="direction_tt" value="<?= $editLegData ? htmlspecialchars($editLegData['direction_tt']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['direction_tt']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="direction_tt" name="direction_tt" value="<?= $editLegData ? htmlspecialchars($editLegData['direction_tt']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['direction_tt'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['direction_tt']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="distance_interval">Distance Interval</label>
-                            <input type="number" step="0.01" id="distance_interval" name="distance_interval" value="<?= $editLegData ? htmlspecialchars($editLegData['distance_interval']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['distance_interval']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="distance_interval" name="distance_interval" value="<?= $editLegData ? htmlspecialchars($editLegData['distance_interval']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['distance_interval'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['distance_interval']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="tas">TAS</label>
-                            <input type="number" step="0.01" id="tas" name="tas" value="<?= $editLegData ? htmlspecialchars($editLegData['tas']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['tas']) ? 'input-error' : ''; ?>" type="number" step="0.01" id="tas" name="tas" value="<?= $editLegData ? htmlspecialchars($editLegData['tas']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['tas'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['tas']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="schedule_eto">Schedule ETO</label>
-                            <input type="text" id="schedule_eto" name="schedule_eto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_eto']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['schedule_eto']) ? 'input-error' : ''; ?>" type="text" id="schedule_eto" name="schedule_eto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_eto']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['schedule_eto'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['schedule_eto']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="schedule_reto">Schedule RETO</label>
-                            <input type="text" id="schedule_reto" name="schedule_reto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_reto']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['schedule_reto']) ? 'input-error' : ''; ?>" type="text" id="schedule_reto" name="schedule_reto" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_reto']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['schedule_reto'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['schedule_reto']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="schedule_ato">Schedule ATO</label>
-                            <input type="text" id="schedule_ato" name="schedule_ato" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_ato']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['schedule_ato']) ? 'input-error' : ''; ?>" type="text" id="schedule_ato" name="schedule_ato" value="<?= $editLegData ? htmlspecialchars($editLegData['schedule_ato']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['schedule_ato'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['schedule_ato']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="altfl_mef">Alt/FL MEF</label>
-                            <input type="text" id="altfl_mef" name="altfl_mef" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_mef']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['altfl_mef']) ? 'input-error' : ''; ?>" type="text" id="altfl_mef" name="altfl_mef" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_mef']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['altfl_mef'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['altfl_mef']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="altfl_cruise">Alt/FL Cruise</label>
-                            <input type="text" id="altfl_cruise" name="altfl_cruise" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_cruise']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['altfl_cruise']) ? 'input-error' : ''; ?>" type="text" id="altfl_cruise" name="altfl_cruise" value="<?= $editLegData ? htmlspecialchars($editLegData['altfl_cruise']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['altfl_cruise'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['altfl_cruise']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="chkp_checkpoint">Checkpoint</label>
-                            <input type="text" id="chkp_checkpoint" name="chkp_checkpoint" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_checkpoint']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['chkp_checkpoint']) ? 'input-error' : ''; ?>" type="text" id="chkp_checkpoint" name="chkp_checkpoint" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_checkpoint']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['chkp_checkpoint'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['chkp_checkpoint']); ?></div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="form-group">
                             <label for="chkp_freq">Checkpoint Frequency</label>
-                            <input type="text" id="chkp_freq" name="chkp_freq" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_freq']) : ''; ?>" required>
+                            <input class="<?= isset($fieldErrors['chkp_freq']) ? 'input-error' : ''; ?>" type="text" id="chkp_freq" name="chkp_freq" value="<?= $editLegData ? htmlspecialchars($editLegData['chkp_freq']) : ''; ?>" required>
+                            <?php if (isset($fieldErrors['chkp_freq'])): ?>
+                                <div class="field-error"><?= htmlspecialchars($fieldErrors['chkp_freq']); ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
 

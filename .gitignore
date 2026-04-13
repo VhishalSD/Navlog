@@ -7,6 +7,3 @@
 # XAMPP / logs
 *.log
 
-# Optional local test files
-/testDatabase.php
-/testAddLeg.php
