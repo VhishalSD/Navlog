@@ -28,6 +28,8 @@ $selectedFlightId = isset($_GET['flight_id']) ? (int)$_GET['flight_id'] : 1;
 $errorMessage = '';
 $successMessage = '';
 $fieldErrors = [];
+$flightFieldErrors = [];
+$flightNameValue = '';
 
 /* ------------ STORE EDIT STATE ------------ */
 $editLegData = null;
@@ -50,6 +52,7 @@ if (isset($_GET['success'])) {
         $successMessage = 'Leg updated successfully.';
     }
 }
+
 
 /* =================================================
    VALIDATE LEG INPUT
@@ -118,14 +121,36 @@ function validateLegInput(array $data): array
     return $errors;
 }
 
-/* ------------ HANDLE FORM SUBMITS ------------ */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_flight'])) {
-    $flightName = trim((string)$_POST['flight_name']);
+/* =================================================
+   VALIDATE FLIGHT INPUT
+   Checks if the flight name is valid.
+================================================= */
+function validateFlightInput(string $flightName): array
+{
+    $errors = [];
+    $trimmedFlightName = trim($flightName);
 
-    if ($db->flightNameExists($flightName)) {
+    if ($trimmedFlightName === '') {
+        $errors['flight_name'] = 'Flight name cannot be empty.';
+    } elseif (strlen($trimmedFlightName) < 3) {
+        $errors['flight_name'] = 'Flight name must be at least 3 characters long.';
+    }
+
+    return $errors;
+}
+
+/* ------------ HANDLE FLIGHT CREATE SUBMIT ------------ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_flight'])) {
+    $flightNameValue = trim((string)$_POST['flight_name']);
+    $flightFieldErrors = validateFlightInput($flightNameValue);
+
+    if (!empty($flightFieldErrors)) {
+        $errorMessage = 'Please fix the highlighted flight field.';
+    } elseif ($db->flightNameExists($flightNameValue)) {
         $errorMessage = 'This flight name already exists.';
+        $flightFieldErrors['flight_name'] = 'This flight name already exists.';
     } else {
-        $db->addFlight($flightName);
+        $db->addFlight($flightNameValue);
         header('Location: index.php?success=flight_added');
         exit;
     }
@@ -397,6 +422,10 @@ $lastIndex = $legArray->count() - 1;
             color: #990000;
             font-size: 13px;
         }
+        .flight-input-error {
+            border: 1px solid #cc0000 !important;
+            background-color: #fff5f5 !important;
+        }
 
         .form-actions {
             margin-top: 20px;
@@ -550,7 +579,10 @@ $lastIndex = $legArray->count() - 1;
                 <form method="post" action="index.php">
                     <div class="form-group">
                         <label for="flight_name">Flight Name</label>
-                        <input type="text" id="flight_name" name="flight_name" required>
+                        <input class="<?= isset($flightFieldErrors['flight_name']) ? 'flight-input-error' : ''; ?>" type="text" id="flight_name" name="flight_name" value="<?= htmlspecialchars($flightNameValue); ?>" required>
+                        <?php if (isset($flightFieldErrors['flight_name'])): ?>
+                            <div class="field-error"><?= htmlspecialchars($flightFieldErrors['flight_name']); ?></div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="form-actions">
