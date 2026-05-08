@@ -1,0 +1,960 @@
+/* =================================================
+   NAVLOG SCHOOL VERSION STYLESHEET
+   This file contains the visual styling for the
+   school version of the NAVLOG application.
+================================================= */
+
+/* =================================================
+   MICRO RESET
+================================================= */
+
+html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+body {
+    width: 100%;
+    margin: 0 auto;
+    padding: 5px;
+    font-family: Arial, sans-serif;
+    font-size: medium;
+    line-height: 1.75;
+    background: url("../Images/background.jpg") no-repeat center fixed;
+    background-size: cover;
+    color: azure;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* =================================================
+   TYPOGRAPHY
+================================================= */
+
+h1, h2, h3, h4, h5, h6 {
+    padding: 0;
+    margin: 48px 0 16px;
+    line-height: 1.25;
+    text-align: center;
+}
+
+h1 {
+    font-size: 32px;
+}
+
+h2 {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+h3, h4, h5, h6 {
+    font-size: 19px;
+    font-weight: bold;
+    text-align: left;
+}
+
+blockquote {
+    margin: 1em 0;
+    padding: 0 2em;
+    border-left: 3px solid #ddd;
+}
+
+pre, code {
+    font-size: .9em;
+}
+
+pre code {
+    display: block;
+    border: 1px solid #ddd;
+    box-shadow: 5px 5px 5px #eee;
+    padding: 1em;
+    overflow-x: auto;
+    line-height: 1.75;
+    background: none;
+}
+
+code {
+    background: #f9f9f9;
+}
+
+/* =================================================
+   LINKS AND LISTS
+================================================= */
+
+ul, ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+li {
+    margin: 4px 0;
+    padding: 0;
+}
+
+ul li a {
+    display: block;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.3s;
+}
+
+ul li a:hover {
+    background-color: #f0f0f0;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+    border-bottom: 1px solid;
+}
+
+sup a {
+    border-bottom: none;
+}
+
+hr {
+    display: block;
+    height: 1px;
+    border: 0;
+    border-top: 1px solid;
+    margin: 50px auto;
+    padding: 0;
+    max-width: 300px;
+}
+
+/* =================================================
+   PAGE LAYOUT
+================================================= */
+
+.masthead {
+    width: 200px;
+    padding: 20px 50px 20px 10px;
+    float: left;
+}
+
+.main {
+    width: 80%;
+    padding: 20px 20px 80px 20px;
+    margin-left: 200px;
+    border-left: 3px solid black;
+    min-height: calc(100vh - 60px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 620px));
+    gap: 10px;
+    align-items: start;
+}
+
+.main > .title {
+    grid-column: 1 / -1;
+    order: 1;
+}
+
+.main > p {
+    grid-column: 1 / -1;
+    order: 2;
+}
+
+.main .title h1 {
+    margin-top: 0;
+    margin-bottom: 40px;
+    font-weight: bold;
+    color: azure;
+}
+
+.title h3 {
+    font-weight: normal;
+    text-align: center;
+}
+
+.subtitle {
+    font-size: .9em;
+    color: #666;
+}
+
+/* =================================================
+   SIDEBAR MENU
+================================================= */
+
+.masthead .menu {
+    margin-right: 20px;
+    direction: rtl;
+    width: 180px;
+}
+
+.masthead .menu a {
+    direction: ltr;
+}
+
+.masthead .menu ul ul {
+    list-style: none;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.masthead .menu li li::before {
+    content: "•\00a\000a0\00a0";
+}
+
+/* =================================================
+   PANELS
+================================================= */
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border: 1px solid #f5c6cb;
+    width: 1250px;
+}
+
+.panel-inline-info {
+    margin-left: 20px;
+}
+
+.panel-label-spaced {
+    margin-left: 20px;
+}
+
+.panel-error-text {
+    margin-left: 20px;
+    color: #721c24;
+}
+
+.weather-result-text {
+    display: block;
+    margin-top: 6px;
+}
+
+.add-leg-save-button {
+    margin-top: 10px;
+}
+
+#load-flight-panel {
+    grid-column: 1 / -1;
+    order: 3;
+}
+
+#weather-panel {
+    grid-column: 1;
+    order: 4;
+}
+
+#taf-panel {
+    grid-column: 2;
+    order: 5;
+}
+
+#add-flight-panel {
+    grid-column: 1;
+    order: 6;
+}
+
+#fuel-calculation-panel {
+    grid-column: 2;
+    order: 7;
+}
+
+#add-leg-panel {
+    grid-column: 1 / -1;
+    order: 8;
+}
+
+.database-panel,
+.weather-panel,
+.add-flight-panel,
+.add-leg-panel {
+    margin-bottom: 10px;
+    color: black;
+    padding: 10px;
+    border: 2px solid #4f81bd;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.database-panel,
+.add-flight-panel {
+    background: #dce6f1;
+}
+
+.weather-panel {
+    background: #fff2cc;
+}
+
+.add-leg-panel {
+    background: #f2dcdb;
+}
+
+#weather-panel,
+#taf-panel,
+#add-flight-panel,
+#fuel-calculation-panel {
+    width: auto;
+    min-height: 0;
+}
+
+.flight-select {
+    width: 520px;
+    margin-left: 10px;
+}
+
+/* =================================================
+   FORM ELEMENTS
+================================================= */
+
+input[type="date"],
+input[type="time"],
+input[type="number"] {
+    font-family: Arial, sans-serif;
+    appearance: none;
+    -webkit-appearance: none;
+    color: black;
+    font-size: medium;
+    background-color: #dce6f1;
+    padding-left: 5px;
+    display: inline-block !important;
+    visibility: visible !important;
+}
+
+input[type="text"] {
+    padding-left: 10px;
+}
+
+button,
+select {
+    background-color: #9AA6B2;
+    font-size: medium;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    margin-top: 25px;
+    color: midnightblue;
+    width: 20%;
+}
+
+.weather-panel input {
+    width: 120px;
+    height: 34px;
+    border: 1px solid #777;
+    background-color: #dce6f1;
+    color: black;
+    margin-left: 10px;
+}
+
+.weather-button,
+.add-flight-button,
+.add-leg-button {
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: 2px solid #333;
+    background-color: #9AA6B2;
+    color: midnightblue;
+    cursor: pointer;
+}
+
+.weather-button {
+    width: 140px;
+    margin-left: 10px;
+}
+
+.add-flight-button {
+    width: 140px;
+}
+
+.add-leg-button {
+    width: 120px;
+}
+
+#weather-panel button,
+#taf-panel button,
+#add-flight-panel button,
+#fuel-calculation-panel button,
+#add-leg-panel button {
+    margin-top: 8px;
+}
+
+#weather-panel small,
+#taf-panel small {
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+/* =================================================
+   ADD FLIGHT, ADD LEG AND FUEL GRIDS
+================================================= */
+
+.add-flight-grid,
+.add-leg-grid,
+.fuel-grid {
+    display: grid;
+    gap: 8px;
+    align-items: end;
+    margin-top: 10px;
+}
+
+.add-flight-grid {
+    grid-template-columns: repeat(4, minmax(90px, 1fr));
+}
+
+.add-leg-grid {
+    grid-template-columns: repeat(8, minmax(90px, 1fr));
+}
+
+.fuel-grid {
+    grid-template-columns: repeat(3, minmax(100px, 1fr));
+}
+
+.add-flight-field label,
+.add-leg-field label,
+.fuel-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.add-flight-field input,
+.add-leg-field input,
+.fuel-field input {
+    width: 100%;
+    height: 34px;
+    border: 1px solid #777;
+    color: black;
+}
+
+.add-flight-field input,
+.fuel-field input {
+    background-color: #f2dcdb;
+}
+
+.add-leg-field input {
+    background-color: #dce6f1;
+}
+
+.fuel-result {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #fff2cc;
+    border: 1px solid #4f81bd;
+    color: black;
+    font-weight: bold;
+}
+
+/* =================================================
+   NAVLOG TABLES
+================================================= */
+
+table {
+    grid-column: 1 / -1;
+    margin-top: 25px;
+    border-spacing: 0;
+    width: 1250px;
+    border: 2px solid;
+}
+
+#table1 {
+    order: 9;
+}
+
+#table2 {
+    order: 10;
+}
+
+#table3 {
+    order: 11;
+    margin-bottom: 70px;
+}
+
+table tr {
+    padding: 0;
+}
+
+table > tbody > tr > td {
+    border-bottom: 1px dashed darkgrey;
+    border-right: 1px dashed darkgrey;
+    text-align: center;
+    background-color: #4f81bd;
+    color: white;
+    padding: 0;
+}
+
+#table1 input,
+#table1 select {
+    border: 0;
+    margin: 0 auto;
+    width: 107px;
+    height: 40px;
+    background-color: #dce6f1;
+    font-size: medium;
+}
+
+#table2 input,
+#table2 select,
+#table3 input,
+#table3 select {
+    border: 0;
+    margin: 0 auto;
+    width: 55px;
+    height: 40px;
+    background-color: #dce6f1;
+    font-size: medium;
+}
+
+#table2 tbody tr th,
+#table3 tbody tr th {
+    background-color: #4f81bd;
+    font-size: x-large;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    border-right: 1px black solid;
+    color: white;
+}
+
+/* =================================================
+   TOOLTIP
+================================================= */
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: #444;
+    text-decoration: underline dotted;
+    text-underline-offset: 4px;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 220px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    padding: 6px 10px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 13px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* =================================================
+   GUIDE OVERLAY
+================================================= */
+
+#guide-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    display: none;
+}
+
+#guide-tooltip {
+    position: absolute;
+    max-width: 250px;
+    background: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+    z-index: 1000;
+    display: none;
+    font-family: sans-serif;
+    color: #333333;
+    margin: 5px 5px 0 0;
+}
+
+#guide-controls a {
+    text-decoration: none !important;
+}
+
+[data-highlight] {
+    position: relative;
+    z-index: 1001;
+    outline: 3px solid darkred;
+    background-color: #fff;
+}
+
+/* =================================================
+   FOOTER
+================================================= */
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #f1f1f1;
+    text-align: center;
+    padding: 10px;
+    font-size: 10px;
+    font-weight: lighter;
+    z-index: 1000;
+    color: black;
+}
+
+/* =================================================
+   UTILITY STYLES
+================================================= */
+
+.copyright {
+    text-align: center;
+}
+
+.post-nav {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.nav-next {
+    margin-left: 1em;
+    text-align: right;
+}
+
+.nav-prev {
+    margin-right: 1em;
+}
+
+.comments {
+    margin-top: 20px;
+}
+
+.footnotes {
+    font-size: .9em;
+}
+
+.home .tils,
+.home .links,
+.home .posts {
+    margin-bottom: 48px;
+}
+
+.unselectable {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* =================================================
+   RESPONSIVE LAYOUT
+================================================= */
+
+@media screen and (max-width: 1280px) {
+    body {
+        width: auto;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        margin-top: 24px;
+    }
+
+    .masthead {
+        width: auto;
+        float: none;
+        padding: 20px 0 20px;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .main {
+        width: auto;
+        padding: 20px 10px 80px 10px;
+        margin-left: 0;
+        border-left: none;
+        min-height: auto;
+        grid-template-columns: 1fr;
+    }
+
+    #weather-panel,
+    #taf-panel,
+    #add-flight-panel,
+    #fuel-calculation-panel,
+    #add-leg-panel,
+    #load-flight-panel,
+    #table1,
+    #table2,
+    #table3 {
+        grid-column: 1 / -1;
+    }
+
+    .masthead h1 {
+        text-align: left;
+        font-size: 2.4rem;
+    }
+
+    .masthead .tagline {
+        text-align: left;
+    }
+
+    .masthead .menu {
+        direction: ltr;
+        margin-right: 0;
+    }
+
+    .masthead .menu ul {
+        text-align: left;
+        margin: 0;
+        padding: 0;
+        flex-wrap: wrap;
+        gap: 4px 20px;
+        max-width: 440px;
+        font-size: 14px;
+        display: grid;
+        grid-template-columns: auto auto auto auto;
+    }
+
+    .masthead .menu li {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+    }
+
+    .title h1 {
+        text-align: left;
+    }
+
+    hr {
+        max-width: none;
+    }
+}
+
+@media screen and (max-width: 720px) {
+    .add-flight-grid,
+    .add-leg-grid,
+    .fuel-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    body {
+        font-size: 16px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    h3, h4, h5, h6 {
+        font-size: 16px;
+    }
+
+    pre, code {
+        font-size: 12px;
+    }
+
+    .masthead {
+        padding-top: 0;
+    }
+}
+
+/* =================================================
+   INLINE STYLE REPLACEMENTS
+================================================= */
+
+.table-cell-narrow {
+    width: 50px;
+}
+
+.select-narrow {
+    width: 50px;
+}
+
+.time-input {
+    width: 99%;
+}
+
+.table-group-row {
+    font-size: x-large;
+}
+
+.table-continuation {
+    margin-top: 0;
+    border-top: 0;
+}
+
+.hidden-route-frame {
+    display: none;
+}
+
+/* =================================================
+   DYNAMIC TABLE COLOR CLASSES
+================================================= */
+
+.navlog-input {
+    border: 0;
+    margin: 0 auto;
+    width: 55px;
+    height: 40px;
+    font-size: medium;
+}
+
+.cell-blue-light {
+    background-color: #dce6f1 !important;
+}
+
+.cell-blue-dark {
+    background-color: #b8cce4 !important;
+}
+
+.cell-pink-light {
+    background-color: #f2dcdb !important;
+}
+
+.cell-pink-dark {
+    background-color: #e6b8b7 !important;
+}
+
+.alternate-label-input {
+    width: 139px;
+}
+
+.alternate-select {
+    width: 139px;
+}
+
+.alternate-radio-input {
+    width: 102px;
+}
+
+.table-full-input {
+    width: 100% !important;
+    margin: 0 auto;
+}
+
+/* =================================================
+   FINAL TABLE WIDTH FIXES
+   These rules must stay at the bottom so they override
+   the older table input/select width rules.
+================================================= */
+
+#table3 .alternate-label-input {
+    width: 139px !important;
+}
+
+#table3 .alternate-select {
+    width: 139px !important;
+    background-color: #b8cce4 !important;
+}
+
+#table3 .alternate-radio-input {
+    width: 102px !important;
+    background-color: #b8cce4 !important;
+}
+
+#table3 .table-full-input {
+    width: 100% !important;
+}
+
+#table3 .cell-blue-dark {
+    background-color: #b8cce4 !important;
+}
+
+#table3 .cell-pink-light {
+    background-color: #f2dcdb !important;
+}
+
+#table3 .cell-pink-dark {
+    background-color: #e6b8b7 !important;
+}
+
+/* =================================================
+   LIGHT MODE
+   Clear dashboard-style alternative to the darker
+   NAVLOG background.
+================================================= */
+
+body.light-mode {
+    background: #f3f6fb;
+    color: #0f172a;
+}
+
+body.light-mode .masthead {
+    background: #102a43;
+    border-right-color: #102a43;
+}
+
+body.light-mode .menu a {
+    color: #ffffff;
+    border-bottom-color: rgba(255, 255, 255, 0.22);
+}
+
+body.light-mode .menu a:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+body.light-mode .main {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 0 24px rgba(15, 23, 42, 0.12);
+}
+
+body.light-mode .title h1 {
+    color: #102a43;
+    text-shadow: none;
+}
+
+body.light-mode .database-panel,
+body.light-mode .add-flight-panel,
+body.light-mode .weather-panel,
+body.light-mode .add-leg-panel {
+    border-color: #2563eb;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
+}
+
+body.light-mode .database-panel,
+body.light-mode .add-flight-panel {
+    background-color: #e8f1fb;
+}
+
+body.light-mode .weather-panel {
+    background-color: #fff4c7;
+}
+
+body.light-mode .add-leg-panel {
+    background-color: #f8dddd;
+}
+
+body.light-mode button,
+body.light-mode .add-flight-button,
+body.light-mode .add-leg-button,
+body.light-mode .weather-button {
+    background-color: #d2dae6;
+    color: #000066;
+    border-color: #334155;
+}
+
+body.light-mode footer {
+    background-color: #f3f6fb;
+    border-top: 1px solid #d6dee9;
+}
+
+body.light-mode footer a {
+    color: #0f172a;
+}
