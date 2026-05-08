@@ -23,13 +23,18 @@ $tafData = null;
 $tafIcaoCode = '';
 $tafMessage = '';
 $errorMessage = '';
+$validationErrors = [];
 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'get_wind_data') {
         $icaoCode = strtoupper(trim($_POST['icao_code'] ?? ''));
         $weatherIcaoCode = $icaoCode;
 
-        if ($icaoCode !== '') {
+        if ($icaoCode === '') {
+            $weatherMessage = 'ICAO code is required.';
+        } elseif (!isValidIcaoCode($icaoCode)) {
+            $weatherMessage = 'ICAO code must contain exactly 4 letters, for example EHRD.';
+        } else {
             $windData = $weatherScraper->getWindData($icaoCode);
 
             if ($windData === null) {
@@ -42,7 +47,11 @@ try {
         $icaoCode = strtoupper(trim($_POST['taf_icao_code'] ?? ''));
         $tafIcaoCode = $icaoCode;
 
-        if ($icaoCode !== '') {
+        if ($icaoCode === '') {
+            $tafMessage = 'ICAO code is required.';
+        } elseif (!isValidIcaoCode($icaoCode)) {
+            $tafMessage = 'ICAO code must contain exactly 4 letters, for example EHAM.';
+        } else {
             $tafData = $weatherScraper->getTafData($icaoCode);
 
             if ($tafData === null) {
@@ -61,7 +70,35 @@ try {
         $destinationAltitude = filter_input(INPUT_POST, 'destination_altitude', FILTER_VALIDATE_INT);
         $tas = filter_input(INPUT_POST, 'tas', FILTER_VALIDATE_INT);
 
-        if ($date !== '' && $departure !== '' && $destination !== '' && $departureAltitude !== false && $destinationAltitude !== false && $tas !== false) {
+        if (!isValidDate($date)) {
+            $validationErrors[] = 'Date is required and must be a valid date.';
+        }
+
+        if (!isValidIcaoCode($departure)) {
+            $validationErrors[] = 'Departure must be a valid ICAO code, for example EHRD.';
+        }
+
+        if (!isValidIcaoCode($destination)) {
+            $validationErrors[] = 'Destination must be a valid ICAO code, for example EHAM.';
+        }
+
+        if (isValidIcaoCode($departure) && isValidIcaoCode($destination) && $departure === $destination) {
+            $validationErrors[] = 'Departure and destination cannot be the same airport.';
+        }
+
+        if ($departureAltitude === false || !isInRange((int)$departureAltitude, -1500, 60000)) {
+            $validationErrors[] = 'Departure altitude must be a whole number between -1500 and 60000.';
+        }
+
+        if ($destinationAltitude === false || !isInRange((int)$destinationAltitude, -1500, 60000)) {
+            $validationErrors[] = 'Destination altitude must be a whole number between -1500 and 60000.';
+        }
+
+        if ($tas === false || !isInRange((int)$tas, 1, 500)) {
+            $validationErrors[] = 'TAS must be a whole number between 1 and 500.';
+        }
+
+        if (empty($validationErrors)) {
             $newFlightId = $db->addFlight(
                 $date,
                 $departure,
@@ -76,6 +113,8 @@ try {
             header('Location: index.php?flight_id=' . $newFlightId);
             exit;
         }
+
+        $errorMessage = implode(' ', $validationErrors);
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_leg') {
@@ -83,34 +122,67 @@ try {
         $checkpointLocation = trim($_POST['checkpoint_location'] ?? '');
         $checkpointFrequency = filter_input(INPUT_POST, 'checkpoint_frequency', FILTER_VALIDATE_INT);
 
-        if ($flightId && $checkpointLocation !== '') {
+        if (!$flightId) {
+            $validationErrors[] = 'A valid flight must be selected before adding a leg.';
+        }
+
+        if ($checkpointLocation === '') {
+            $validationErrors[] = 'Checkpoint is required.';
+        }
+
+        if (mb_strlen($checkpointLocation) > 100) {
+            $validationErrors[] = 'Checkpoint may not be longer than 100 characters.';
+        }
+
+        if (($_POST['checkpoint_frequency'] ?? '') !== '' && ($checkpointFrequency === false || !isInRange((int)$checkpointFrequency, 1, 999999))) {
+            $validationErrors[] = 'Checkpoint frequency must be a whole number between 1 and 999999.';
+        }
+
+        $timeAcc = validatePostIntRange('time_acc', 'Time Acc', 0, 1440, $validationErrors);
+        $timeInt = validatePostIntRange('time_int', 'Time Int', 0, 1440, $validationErrors);
+        $mef = validatePostIntRange('mef', 'MEF', 0, 60000, $validationErrors);
+        $cruise = validatePostIntRange('cruise', 'Cruise altitude', 0, 60000, $validationErrors);
+        $mh = validatePostIntRange('mh', 'MH', 0, 360, $validationErrors);
+        $variation = validatePostIntRange('variation', 'Variation', -180, 180, $validationErrors);
+        $th = validatePostIntRange('th', 'TH', 0, 360, $validationErrors);
+        $wca = validatePostIntRange('wca', 'WCA', -90, 90, $validationErrors);
+        $windDir = validatePostIntRange('wind_dir', 'Wind direction', 0, 360, $validationErrors);
+        $windV = validatePostIntRange('wind_v', 'Wind speed', 0, 250, $validationErrors);
+        $tt = validatePostIntRange('tt', 'TT', 0, 360, $validationErrors);
+        $distInt = validatePostIntRange('dist_int', 'Distance interval', 0, 10000, $validationErrors);
+        $distAcc = validatePostIntRange('dist_acc', 'Distance accumulated', 0, 10000, $validationErrors);
+        $gs = validatePostIntRange('gs', 'Ground speed', 0, 500, $validationErrors);
+
+        if (empty($validationErrors)) {
             $checkpointId = $db->addCheckpoint($checkpointLocation, $checkpointFrequency ?: null);
 
             $db->addLeg(
                 $flightId,
                 $checkpointId,
-                (int)($_POST['time_acc'] ?? 0),
-                (int)($_POST['time_int'] ?? 0),
+                $timeAcc,
+                $timeInt,
                 $_POST['eto'] ?? null,
                 $_POST['reto'] ?? null,
                 $_POST['ato'] ?? null,
-                (int)($_POST['mef'] ?? 0),
-                (int)($_POST['cruise'] ?? 0),
-                (int)($_POST['mh'] ?? 0),
-                (int)($_POST['variation'] ?? 0),
-                (int)($_POST['th'] ?? 0),
-                (int)($_POST['wca'] ?? 0),
-                (int)($_POST['wind_dir'] ?? 0),
-                (int)($_POST['wind_v'] ?? 0),
-                (int)($_POST['tt'] ?? 0),
-                (int)($_POST['dist_int'] ?? 0),
-                (int)($_POST['dist_acc'] ?? 0),
-                (int)($_POST['gs'] ?? 0)
+                $mef,
+                $cruise,
+                $mh,
+                $variation,
+                $th,
+                $wca,
+                $windDir,
+                $windV,
+                $tt,
+                $distInt,
+                $distAcc,
+                $gs
             );
 
             header('Location: index.php?flight_id=' . $flightId);
             exit;
         }
+
+        $errorMessage = implode(' ', $validationErrors);
     }
 
     $flights = $db->getFlights();
@@ -139,6 +211,45 @@ try {
 function e(?string $value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function isValidIcaoCode(string $icaoCode): bool
+{
+    return preg_match('/^[A-Z]{4}$/', $icaoCode) === 1;
+}
+
+function isValidDate(string $date): bool
+{
+    if ($date === '') {
+        return false;
+    }
+
+    $dateTime = DateTime::createFromFormat('Y-m-d', $date);
+
+    return $dateTime !== false && $dateTime->format('Y-m-d') === $date;
+}
+
+function isInRange(int $value, int $min, int $max): bool
+{
+    return $value >= $min && $value <= $max;
+}
+
+function validatePostIntRange(string $fieldName, string $label, int $min, int $max, array &$validationErrors): int
+{
+    $rawValue = $_POST[$fieldName] ?? '0';
+
+    if ($rawValue === '') {
+        return 0;
+    }
+
+    $value = filter_var($rawValue, FILTER_VALIDATE_INT);
+
+    if ($value === false || !isInRange((int)$value, $min, $max)) {
+        $validationErrors[] = $label . ' must be a whole number between ' . $min . ' and ' . $max . '.';
+        return 0;
+    }
+
+    return (int)$value;
 }
 ?>
 <!DOCTYPE html>
@@ -179,9 +290,16 @@ function e(?string $value): string
     </header>
 
     <?php if ($errorMessage !== ''): ?>
-        <p class="error-message">
-            <?= e($errorMessage) ?>
-        </p>
+        <div class="error-message">
+            <strong>Please fix the following:</strong>
+            <ul>
+                <?php foreach (explode('. ', trim($errorMessage)) as $message): ?>
+                    <?php if (trim($message) !== ''): ?>
+                        <li><?= e(rtrim($message, '.')) ?>.</li>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     <?php endif; ?>
 
     <form id="load-flight-panel" method="get" class="database-panel">
@@ -637,7 +755,7 @@ function e(?string $value): string
             scrolling="no"></iframe>
 
     <footer>
-        <a href="#" onclick="toggleAchtergrond(event)">Light/Dark Mode</a>|
+        <a href="#" onclick="toggleAchtergrond(event)">Light/Dark Mode</a> |
         <a href="#" onclick="printPagina(); return false;">Print</a> |
         <a href="#" onclick="startGuide()">Stappenplan</a>
     </footer>

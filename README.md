@@ -22,6 +22,7 @@ De applicatie gebruikt **PHP**, **MySQL**, **PDO** en **OOP**. Databasegegevens 
 - Printfunctie voor het NAVLOG-overzicht.
 - Light/Dark Mode voor de interface.
 - Stappenplan dat de gebruiker door de belangrijkste invoervelden leidt.
+- Server-side validatie voor flights, legs, ICAO-codes en numerieke invoer.
 
 ## Gebruikte technieken
 
@@ -48,6 +49,8 @@ Navlog-School/
 │   └── style.css
 ├── js/
 │   └── script.js
+├── database/
+│   └── navlog.sql
 ├── Database.php
 ├── index.php
 └── README.md
@@ -73,7 +76,7 @@ http://localhost/Navlog-School/index.php
 
 ## Belangrijke bestanden
 
-- `index.php` – verwerkt de acties en toont de NAVLOG-interface.
+- `index.php` – verwerkt de acties, toont de NAVLOG-interface en bevat server-side validatie.
 - `Database.php` – bevat de databaseverbinding en queries via PDO.
 - `classes/Leg.php` – class voor één navigatieleg.
 - `classes/LegArray.php` – beheert meerdere `Leg` objecten.
@@ -83,7 +86,9 @@ http://localhost/Navlog-School/index.php
 
 ## Database
 
-De applicatie gebruikt onder andere flights, checkpoints en legs. Een flight kan meerdere legs hebben. De geselecteerde flight bepaalt welke legs in de NAVLOG-tabel worden geladen.
+De applicatie gebruikt tabellen voor flights, checkpoints en legs. Een flight kan meerdere legs hebben. De geselecteerde flight bepaalt welke legs in de NAVLOG-tabel worden geladen.
+
+De database-export hoort in `database/navlog.sql` te staan, zodat het project opnieuw kan worden geïmporteerd in MySQL Workbench.
 
 ## Schoolcriteria
 
@@ -99,12 +104,13 @@ De applicatie gebruikt onder andere flights, checkpoints en legs. Een flight kan
 | Fuel calculation met logica | Klaar |
 | Printfunctie | Klaar |
 | Stappenplan voor invoerhulp | Klaar |
+| Server-side validatie voor invoer | Klaar |
 
 ## Korte uitleg
 
 Ik heb een PHP/MySQL NAVLOG-applicatie gemaakt waarin flights en legs via de database aan elkaar gekoppeld zijn. De databaseverbinding loopt via PDO. De `Leg` class gebruik ik voor één navigatieleg en de `LegArray` class gebruik ik om meerdere legs als objecten te beheren.
 
-De interface is zo opgebouwd dat je eerst een flight selecteert of aanmaakt. Daarna kun je legs toevoegen, METAR/TAF-data ophalen, een fuel calculation uitvoeren en het overzicht printen. Ook bevat de applicatie een Light/Dark Mode en een stappenplan voor invoerhulp.
+De interface is zo opgebouwd dat je eerst een flight selecteert of aanmaakt. Daarna kun je legs toevoegen, METAR/TAF-data ophalen, een fuel calculation uitvoeren en het overzicht printen. Ook bevat de applicatie een Light/Dark Mode, een stappenplan voor invoerhulp en server-side validatie om verkeerde invoer te blokkeren.
 
 ## Auteur
 
