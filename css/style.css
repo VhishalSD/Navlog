@@ -246,27 +246,27 @@ hr {
 
 #weather-panel {
     grid-column: 1;
-    order: 4;
+    order: 5;
 }
 
 #taf-panel {
     grid-column: 2;
-    order: 5;
+    order: 6;
 }
 
 #add-flight-panel {
     grid-column: 1;
-    order: 6;
+    order: 7;
 }
 
 #fuel-calculation-panel {
     grid-column: 2;
-    order: 7;
+    order: 8;
 }
 
 #add-leg-panel {
     grid-column: 1 / -1;
-    order: 8;
+    order: 9;
 }
 
 .database-panel,
@@ -461,15 +461,15 @@ table {
 }
 
 #table1 {
-    order: 9;
-}
-
-#table2 {
     order: 10;
 }
 
-#table3 {
+#table2 {
     order: 11;
+}
+
+#table3 {
+    order: 12;
     margin-bottom: 70px;
 }
 
@@ -957,4 +957,135 @@ body.light-mode footer {
 
 body.light-mode footer a {
     color: #0f172a;
+}
+
+/* =================================================
+   SUCCESS MESSAGE
+================================================= */
+
+.success-message {
+    background-color: #d1fae5;
+    border: 1px solid #10b981;
+    color: #065f46;
+    padding: 10px 14px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* =================================================
+   MANAGE FLIGHT
+================================================= */
+
+.manage-flight-panel {
+    grid-column: 1 / -1;
+    order: 4;
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.panel-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+}
+
+.panel-summary::-webkit-details-marker {
+    display: none;
+}
+
+.panel-summary::after {
+    content: "▾";
+    font-size: 14px;
+    margin-left: auto;
+}
+
+.manage-flight-panel:not([open]) .panel-summary::after {
+    content: "▸";
+}
+
+.panel-summary small {
+    font-size: 14px;
+    font-weight: 400;
+    color: #111827;
+}
+
+.edit-flight-form {
+    width: 100%;
+    padding: 0 14px 14px 14px;
+}
+
+.manage-flight-panel .add-flight-grid {
+    width: 100%;
+}
+
+.manage-flight-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 0;
+    flex-wrap: nowrap;
+}
+
+.manage-flight-action-row form {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    height: 38px;
+}
+
+.manage-flight-button,
+.delete-flight-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 135px;
+    height: 36px;
+    margin: 0;
+    padding: 0 14px;
+    line-height: 1;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.manage-flight-button {
+    background-color: #9AA6B2;
+    color: midnightblue;
+    border-color: #334155;
+}
+
+.manage-flight-button:hover {
+    background-color: #b0b9c4;
+}
+
+.delete-flight-button {
+    background-color: #f3b6b6;
+    color: #5f0000;
+    border-color: #8b0000;
+}
+
+.delete-flight-button:hover {
+    background-color: #e89a9a;
+}
+
+.manage-flight-action-row button:active {
+    transform: translateY(1px);
 }

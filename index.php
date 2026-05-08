@@ -23,6 +23,7 @@ $tafData = null;
 $tafIcaoCode = '';
 $tafMessage = '';
 $errorMessage = '';
+$successMessage = '';
 $validationErrors = [];
 
 try {
@@ -110,7 +111,87 @@ try {
                 (int)$tas
             );
 
-            header('Location: index.php?flight_id=' . $newFlightId);
+            header('Location: index.php?flight_id=' . $newFlightId . '&success=flight_saved');
+            exit;
+        }
+
+        $errorMessage = implode(' ', $validationErrors);
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_flight') {
+        $flightId = filter_input(INPUT_POST, 'flight_id', FILTER_VALIDATE_INT);
+        $date = trim($_POST['edit_date'] ?? '');
+        $departure = strtoupper(trim($_POST['edit_departure'] ?? ''));
+        $destination = strtoupper(trim($_POST['edit_destination'] ?? ''));
+        $departureElevation = trim($_POST['edit_departure_elevation'] ?? '');
+        $destinationElevation = trim($_POST['edit_destination_elevation'] ?? '');
+        $departureAltitude = filter_input(INPUT_POST, 'edit_departure_altitude', FILTER_VALIDATE_INT);
+        $destinationAltitude = filter_input(INPUT_POST, 'edit_destination_altitude', FILTER_VALIDATE_INT);
+        $tas = filter_input(INPUT_POST, 'edit_tas', FILTER_VALIDATE_INT);
+
+        if (!$flightId) {
+            $validationErrors[] = 'A valid flight must be selected before editing.';
+        }
+
+        if (!isValidDate($date)) {
+            $validationErrors[] = 'Date is required and must be a valid date.';
+        }
+
+        if (!isValidIcaoCode($departure)) {
+            $validationErrors[] = 'Departure must be a valid ICAO code, for example EHRD.';
+        }
+
+        if (!isValidIcaoCode($destination)) {
+            $validationErrors[] = 'Destination must be a valid ICAO code, for example EHAM.';
+        }
+
+        if (isValidIcaoCode($departure) && isValidIcaoCode($destination) && $departure === $destination) {
+            $validationErrors[] = 'Departure and destination cannot be the same airport.';
+        }
+
+        if ($departureAltitude === false || !isInRange((int)$departureAltitude, -1500, 60000)) {
+            $validationErrors[] = 'Departure altitude must be a whole number between -1500 and 60000.';
+        }
+
+        if ($destinationAltitude === false || !isInRange((int)$destinationAltitude, -1500, 60000)) {
+            $validationErrors[] = 'Destination altitude must be a whole number between -1500 and 60000.';
+        }
+
+        if ($tas === false || !isInRange((int)$tas, 1, 500)) {
+            $validationErrors[] = 'TAS must be a whole number between 1 and 500.';
+        }
+
+        if (empty($validationErrors)) {
+            $db->updateFlight(
+                    $flightId,
+                    $date,
+                    $departure,
+                    $destination,
+                    $departureElevation,
+                    $destinationElevation,
+                    (int)$departureAltitude,
+                    (int)$destinationAltitude,
+                    (int)$tas
+            );
+
+            header('Location: index.php?flight_id=' . $flightId . '&success=flight_updated');
+            exit;
+        }
+
+        $errorMessage = implode(' ', $validationErrors);
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_flight') {
+        $flightId = filter_input(INPUT_POST, 'flight_id', FILTER_VALIDATE_INT);
+
+        if (!$flightId) {
+            $validationErrors[] = 'A valid flight must be selected before deleting.';
+        }
+
+        if (empty($validationErrors)) {
+            $db->deleteFlight($flightId);
+
+            header('Location: index.php?success=flight_deleted');
             exit;
         }
 
@@ -178,7 +259,7 @@ try {
                 $gs
             );
 
-            header('Location: index.php?flight_id=' . $flightId);
+            header('Location: index.php?flight_id=' . $flightId . '&success=leg_saved');
             exit;
         }
 
@@ -206,6 +287,18 @@ try {
     }
 } catch (PDOException $exception) {
     $errorMessage = 'Database connection failed: ' . $exception->getMessage();
+}
+
+$successCode = $_GET['success'] ?? '';
+
+if ($successCode === 'flight_saved') {
+    $successMessage = 'Flight saved successfully.';
+} elseif ($successCode === 'flight_updated') {
+    $successMessage = 'Flight updated successfully.';
+} elseif ($successCode === 'flight_deleted') {
+    $successMessage = 'Flight deleted successfully.';
+} elseif ($successCode === 'leg_saved') {
+    $successMessage = 'Leg saved successfully.';
 }
 
 function e(?string $value): string
@@ -302,6 +395,12 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         </div>
     <?php endif; ?>
 
+    <?php if ($successMessage !== ''): ?>
+        <div class="success-message">
+            <?= e($successMessage) ?>
+        </div>
+    <?php endif; ?>
+
     <form id="load-flight-panel" method="get" class="database-panel">
         <label for="flight_id"><strong>Load saved flight:</strong></label>
         <select id="flight_id" name="flight_id" onchange="this.form.submit()" class="flight-select">
@@ -313,11 +412,91 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         </select>
         <span class="panel-inline-info">Loaded legs: <?= $legArray->count() ?></span>
     </form>
+    <?php if ($selectedFlight): ?>
+        <details id="manage-flight-panel" class="database-panel manage-flight-panel">
+            <summary class="panel-summary">
+                <span>Manage selected flight</span>
+                <small>
+                    Flight <?= (int)$selectedFlight['idFlight'] ?> -
+                    <?= e($selectedFlight['departure'] ?? '') ?> to <?= e($selectedFlight['destination'] ?? '') ?>
+                </small>
+            </summary>
+
+            <form method="post" class="edit-flight-form">
+                <input type="hidden" name="action" value="update_flight">
+                <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
+
+                <div class="add-flight-grid">
+                    <div class="add-flight-field">
+                        <label>Date</label>
+                        <input type="date" name="edit_date" value="<?= e($selectedFlight['date'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Departure</label>
+                        <input type="text" name="edit_departure" value="<?= e($selectedFlight['departure'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Destination</label>
+                        <input type="text" name="edit_destination" value="<?= e($selectedFlight['destination'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Dept elev.</label>
+                        <input type="text" name="edit_departure_elevation" value="<?= e($selectedFlight['departure_elevation'] ?? '') ?>">
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Dest elev.</label>
+                        <input type="text" name="edit_destination_elevation" value="<?= e($selectedFlight['destination_elevation'] ?? '') ?>">
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Dept alt.</label>
+                        <input type="number" name="edit_departure_altitude" value="<?= e($selectedFlight['departure_alt'] ?? '0') ?>" required>
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>Dest alt.</label>
+                        <input type="number" name="edit_destination_altitude" value="<?= e($selectedFlight['destination_alt'] ?? '0') ?>" required>
+                    </div>
+
+                    <div class="add-flight-field">
+                        <label>TAS</label>
+                        <input type="number" name="edit_tas" value="<?= e($selectedFlight['TAS'] ?? '105') ?>" required>
+                    </div>
+                </div>
+
+                <div class="manage-flight-action-row">
+                    <button type="submit" class="add-flight-button manage-flight-button">Update flight</button>
+
+                    <button
+                            type="submit"
+                            class="delete-flight-button"
+                            form="delete-flight-form"
+                    >
+                        Delete flight
+                    </button>
+                </div>
+            </form>
+
+            <form
+                    id="delete-flight-form"
+                    method="post"
+                    class="delete-flight-form"
+                    onsubmit="return confirm('Are you sure you want to delete this flight and its legs?');"
+            >
+                <input type="hidden" name="action" value="delete_flight">
+                <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
+            </form>
+        </details>
+    <?php endif; ?>
     <form id="weather-panel" method="post" class="weather-panel">
         <input type="hidden" name="action" value="get_wind_data">
         <strong>KNMI wind data</strong>
         <label for="icao_code" class="panel-label-spaced">ICAO</label>
-        <input id="icao_code" type="text" name="icao_code" value="<?= e($weatherIcaoCode) ?>" placeholder="EHRD" maxlength="4" required>
+        <input id="icao_code" type="text" name="icao_code" value="<?= e($weatherIcaoCode) ?>" placeholder="EHRD" maxlength="4" required data-step="1" data-text="Vul hier een ICAO-code in voor METAR winddata, bijvoorbeeld EHRD.">
         <button type="submit" class="weather-button">Get wind data</button>
 
         <?php if ($windData !== null): ?>
@@ -333,66 +512,73 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <?php endif; ?>
     </form>
 
-    <form id="add-flight-panel" method="post" class="add-flight-panel">
-        <input type="hidden" name="action" value="add_flight">
+    <details id="add-flight-panel" class="add-flight-panel collapsible-panel">
+        <summary class="panel-summary">
+            <span>Add new flight</span>
+        </summary>
 
-        <strong>Add new flight</strong>
+        <form method="post">
+            <input type="hidden" name="action" value="add_flight">
 
-        <div class="add-flight-grid">
-            <div class="add-flight-field">
-                <label>Date</label>
-                <input type="date" name="date" required>
+            <div class="add-flight-grid">
+                <div class="add-flight-field">
+                    <label>Date</label>
+                    <input type="date" name="date" required data-step="2" data-text="Vul hier de datum van de flight in.">
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Departure</label>
+                    <input type="text" name="departure" placeholder="EHRD" required data-step="3" data-text="Vul hier de departure ICAO-code in, bijvoorbeeld EHRD.">
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Destination</label>
+                    <input type="text" name="destination" placeholder="EHAM" required data-step="4" data-text="Vul hier de destination ICAO-code in, bijvoorbeeld EHAM.">
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Dept elev.</label>
+                    <input type="text" name="departure_elevation" placeholder="-14">
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Dest elev.</label>
+                    <input type="text" name="destination_elevation" placeholder="-11">
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Dept alt.</label>
+                    <input type="number" name="departure_altitude" value="0" required>
+                </div>
+
+                <div class="add-flight-field">
+                    <label>Dest alt.</label>
+                    <input type="number" name="destination_altitude" value="0" required>
+                </div>
+
+                <div class="add-flight-field">
+                    <label>TAS</label>
+                    <input type="number" name="tas" value="105" required data-step="5" data-text="Vul hier de true airspeed in. Dit moet een positief getal zijn.">
+                </div>
             </div>
 
-            <div class="add-flight-field">
-                <label>Departure</label>
-                <input type="text" name="departure" placeholder="EHRD" required>
-            </div>
+            <button type="submit" class="add-flight-button">Save flight</button>
+        </form>
+    </details>
 
-            <div class="add-flight-field">
-                <label>Destination</label>
-                <input type="text" name="destination" placeholder="EHAM" required>
-            </div>
+    <details id="fuel-calculation-panel" class="database-panel collapsible-panel">
+        <summary class="panel-summary">
+            <span>Fuel calculation</span>
+            <small>
+                Selected flight: <?= $selectedFlight ? 'Flight ' . (int)$selectedFlight['idFlight'] . ' - ' . e($selectedFlight['departure']) . ' to ' . e($selectedFlight['destination']) : 'No flight selected' ?>
+            </small>
+        </summary>
 
-            <div class="add-flight-field">
-                <label>Dept elev.</label>
-                <input type="text" name="departure_elevation" placeholder="-14">
-            </div>
-
-            <div class="add-flight-field">
-                <label>Dest elev.</label>
-                <input type="text" name="destination_elevation" placeholder="-11">
-            </div>
-
-            <div class="add-flight-field">
-                <label>Dept alt.</label>
-                <input type="number" name="departure_altitude" value="0" required>
-            </div>
-
-            <div class="add-flight-field">
-                <label>Dest alt.</label>
-                <input type="number" name="destination_altitude" value="0" required>
-            </div>
-
-            <div class="add-flight-field">
-                <label>TAS</label>
-                <input type="number" name="tas" value="105" required>
-            </div>
-        </div>
-
-        <button type="submit" class="add-flight-button">Save flight</button>
-    </form>
-
-    <section id="fuel-calculation-panel" class="database-panel">
-        <strong>Fuel calculation</strong>
-        <span class="panel-inline-info">
-            Selected flight: <?= $selectedFlight ? 'Flight ' . (int)$selectedFlight['idFlight'] . ' - ' . e($selectedFlight['departure']) . ' to ' . e($selectedFlight['destination']) : 'No flight selected' ?>
-        </span>
 
         <div class="fuel-grid">
             <div class="fuel-field">
                 <label>Fuel on board</label>
-                <input id="fuel_on_board" type="number" value="0" min="0" step="0.1">
+                <input id="fuel_on_board" type="number" value="0" min="0" step="0.1" data-step="6" data-text="Vul hier de hoeveelheid fuel on board in.">
             </div>
 
             <div class="fuel-field">
@@ -402,7 +588,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
             <div class="fuel-field">
                 <label>Trip fuel</label>
-                <input id="trip_fuel" type="number" value="0" min="0" step="0.1">
+                <input id="trip_fuel" type="number" value="0" min="0" step="0.1" data-step="7" data-text="Vul hier de trip fuel in voor de vlucht.">
             </div>
 
             <div class="fuel-field">
@@ -428,13 +614,13 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             Remaining fuel: <span id="remaining_fuel">—</span> |
             Status: <span id="fuel_status">—</span>
         </div>
-    </section>
+    </details>
 
     <form id="taf-panel" method="post" class="weather-panel">
         <input type="hidden" name="action" value="get_taf_data">
         <strong>TAF forecast</strong>
         <label for="taf_icao_code" class="panel-label-spaced">ICAO</label>
-        <input id="taf_icao_code" type="text" name="taf_icao_code" value="<?= e($tafIcaoCode) ?>" placeholder="EHAM" maxlength="4" required>
+        <input id="taf_icao_code" type="text" name="taf_icao_code" value="<?= e($tafIcaoCode) ?>" placeholder="EHAM" maxlength="4" required data-step="8" data-text="Vul hier een ICAO-code in voor de TAF forecast, bijvoorbeeld EHAM.">
         <button type="submit" class="weather-button">Get TAF</button>
 
         <?php if ($tafData !== null): ?>
@@ -449,113 +635,117 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     </form>
 
     <?php if ($selectedFlight): ?>
-        <form id="add-leg-panel" method="post" class="add-leg-panel">
-            <input type="hidden" name="action" value="add_leg">
-            <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
+        <details id="add-leg-panel" class="add-leg-panel collapsible-panel">
+            <summary class="panel-summary">
+                <span>Add leg to selected flight</span>
+            </summary>
 
-            <strong>Add leg to selected flight</strong>
+            <form method="post">
+                <input type="hidden" name="action" value="add_leg">
+                <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
 
-            <div class="add-leg-grid">
-                <div class="add-leg-field">
-                    <label>Checkpoint</label>
-                    <input type="text" name="checkpoint_location" required>
+                <div class="add-leg-grid">
+                    <div class="add-leg-field">
+                        <label>Checkpoint</label>
+                        <input type="text" name="checkpoint_location" required data-step="9" data-text="Vul hier de checkpointnaam of locatie in. Dit veld is verplicht.">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Frequency</label>
+                        <input type="number" name="checkpoint_frequency" data-step="10" data-text="Vul hier optioneel de radiofrequentie van het checkpoint in.">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Time Acc</label>
+                        <input type="number" name="time_acc" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Time Int</label>
+                        <input type="number" name="time_int" value="0" data-step="11" data-text="Vul hier de time interval van deze leg in minuten in.">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>MEF</label>
+                        <input type="number" name="mef" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Cruise</label>
+                        <input type="number" name="cruise" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>MH</label>
+                        <input type="number" name="mh" value="0" data-step="12" data-text="Vul hier de magnetic heading in. Dit moet tussen 0 en 360 liggen.">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Variation</label>
+                        <input type="number" name="variation" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>TH</label>
+                        <input type="number" name="th" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>WCA</label>
+                        <input type="number" name="wca" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Wind dir</label>
+                        <input type="number" name="wind_dir" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Wind V</label>
+                        <input type="number" name="wind_v" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>TT</label>
+                        <input type="number" name="tt" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Dist Int</label>
+                        <input type="number" name="dist_int" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>Dist Acc</label>
+                        <input type="number" name="dist_acc" value="0">
+                    </div>
+
+                    <div class="add-leg-field">
+                        <label>GS</label>
+                        <input type="number" name="gs" value="0">
+                    </div>
                 </div>
 
-                <div class="add-leg-field">
-                    <label>Frequency</label>
-                    <input type="number" name="checkpoint_frequency">
-                </div>
+                <input type="hidden" name="eto" value="">
+                <input type="hidden" name="reto" value="">
+                <input type="hidden" name="ato" value="">
 
-                <div class="add-leg-field">
-                    <label>Time Acc</label>
-                    <input type="number" name="time_acc" value="0">
-                </div>
+                <button type="submit" class="add-leg-button add-leg-save-button">Save leg</button>
 
-                <div class="add-leg-field">
-                    <label>Time Int</label>
-                    <input type="number" name="time_int" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>MEF</label>
-                    <input type="number" name="mef" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Cruise</label>
-                    <input type="number" name="cruise" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>MH</label>
-                    <input type="number" name="mh" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Variation</label>
-                    <input type="number" name="variation" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>TH</label>
-                    <input type="number" name="th" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>WCA</label>
-                    <input type="number" name="wca" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Wind dir</label>
-                    <input type="number" name="wind_dir" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Wind V</label>
-                    <input type="number" name="wind_v" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>TT</label>
-                    <input type="number" name="tt" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Dist Int</label>
-                    <input type="number" name="dist_int" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>Dist Acc</label>
-                    <input type="number" name="dist_acc" value="0">
-                </div>
-
-                <div class="add-leg-field">
-                    <label>GS</label>
-                    <input type="number" name="gs" value="0">
-                </div>
-            </div>
-
-            <input type="hidden" name="eto" value="">
-            <input type="hidden" name="reto" value="">
-            <input type="hidden" name="ato" value="">
-
-            <button type="submit" class="add-leg-button add-leg-save-button">Save leg</button>
-
-        </form>
+            </form>
+        </details>
     <?php endif; ?>
 
     <table id="table1">
         <tr>
             <td>Date</td>
-            <td colspan="3"><input class="table-full-input" type="date" value="<?= e($selectedFlight['date'] ?? '') ?>" data-step="1" data-text="Vul hier de datum in waarop je gaat vliegen" /></td>
+            <td colspan="3"><input class="table-full-input" type="date" value="<?= e($selectedFlight['date'] ?? '') ?>" /></td>
             <td>Tacho_beg:</td>
             <td><input type="text"/></td>
             <td>Tacho_end:</td>
             <td><input type="text"/></td>
             <td>Pilot</td>
-            <td><input type="text" data-step="4" data-text="Vul hier je naam in" /></td>
+            <td><input type="text" /></td>
             <td>Altitudes</td>
             <td class="table-cell-narrow">OAT</td>
             <td>IAS</td>
@@ -563,7 +753,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         </tr>
         <tr>
             <td>Dept</td>
-            <td><select class="airportSelect" data-step="2" data-text="Kies het veld van vertrek. De fieldelevation wordt automatisch ingevuld"></select></td>
+            <td><select class="airportSelect"></select></td>
             <td>elev:</td>
             <td><input class="elevationInput" value="<?= e($selectedFlight['departure_elevation'] ?? '') ?>" readonly/></td>
             <td>Off-blocks:</td>
@@ -572,26 +762,26 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <td><input type="text"/></td>
             <td>Acft_type</td>
             <td><input class="typeInput" id="type" readonly/></td>
-            <td><input type="number" value="<?= e($selectedFlight['departure_alt'] ?? '') ?>" data-step="6" data-text="Geef hier de hoogte aan waarop je het circuit verlaat"/></td>
+            <td><input type="number" value="<?= e($selectedFlight['departure_alt'] ?? '') ?>"/></td>
             <td>
-                <select class="select-narrow" data-step="8" data-text="De temperatuur van het veld van vertrek (outside air temperature)">
+                <select class="select-narrow">
                     <option selected></option>
                     <option>-1&#176;</option><option>0&#176;</option><option>1&#176;</option><option>2&#176;</option><option>3&#176;</option><option>4&#176;</option><option>5&#176;</option><option>6&#176;</option><option>7&#176;</option><option>8&#176;</option><option>9&#176;</option><option>10&#176;</option><option>11&#176;</option><option>12&#176;</option><option>13&#176;</option><option>14&#176;</option><option>15&#176;</option><option>16&#176;</option><option>17&#176;</option><option>18&#176;</option><option>19&#176;</option><option>20&#176;</option><option>21&#176;</option><option>22&#176;</option><option>23&#176;</option><option>24&#176;</option><option>25&#176;</option><option>26&#176;</option><option>27&#176;</option><option>28&#176;</option><option>29&#176;</option><option>30&#176;</option><option>31&#176;</option><option>32&#176;</option><option>33&#176;</option><option>34&#176;</option><option>35&#176;</option>                </select>
             </td>
             <td>
-                <select data-step="10" data-text="Indicated airspeed vertrek">
+                <select>
                     <option selected></option>
                     <option>70kt</option><option>71kt</option><option>72kt</option><option>73kt</option><option>74kt</option><option>75kt</option><option>76kt</option><option>77kt</option><option>78kt</option><option>79kt</option><option>80kt</option><option>81kt</option><option>82kt</option><option>83kt</option><option>84kt</option><option>85kt</option><option>86kt</option><option>87kt</option><option>88kt</option><option>89kt</option><option>90kt</option><option>91kt</option><option>92kt</option><option>93kt</option><option>94kt</option><option>95kt</option><option>96kt</option><option>97kt</option><option>98kt</option><option>99kt</option><option>100kt</option><option>101kt</option><option>102kt</option><option>103kt</option><option>104kt</option><option>105kt</option><option>106kt</option><option>107kt</option><option>108kt</option><option>109kt</option><option>110kt</option><option>111kt</option><option>112kt</option><option>113kt</option><option>114kt</option><option>115kt</option><option>116kt</option><option>117kt</option><option>118kt</option><option>119kt</option><option>120kt</option><option>121kt</option><option>122kt</option><option>123kt</option><option>124kt</option><option>125kt</option><option>126kt</option><option>127kt</option><option>128kt</option><option>129kt</option><option>130kt</option><option>131kt</option><option>132kt</option><option>133kt</option><option>134kt</option><option>135kt</option>                </select>
             </td>
             <td>
-                <select data-step="11" data-text="True airspeed vertrek">
+                <select>
                     <option selected></option>
                     <option>70kt</option><option>71kt</option><option>72kt</option><option>73kt</option><option>74kt</option><option>75kt</option><option>76kt</option><option>77kt</option><option>78kt</option><option>79kt</option><option>80kt</option><option>81kt</option><option>82kt</option><option>83kt</option><option>84kt</option><option>85kt</option><option>86kt</option><option>87kt</option><option>88kt</option><option>89kt</option><option>90kt</option><option>91kt</option><option>92kt</option><option>93kt</option><option>94kt</option><option>95kt</option><option>96kt</option><option>97kt</option><option>98kt</option><option>99kt</option><option>100kt</option><option>101kt</option><option>102kt</option><option>103kt</option><option>104kt</option><option>105kt</option><option>106kt</option><option>107kt</option><option>108kt</option><option>109kt</option><option>110kt</option><option>111kt</option><option>112kt</option><option>113kt</option><option>114kt</option><option>115kt</option><option>116kt</option><option>117kt</option><option>118kt</option><option>119kt</option><option>120kt</option><option>121kt</option><option>122kt</option><option>123kt</option><option>124kt</option><option>125kt</option><option>126kt</option><option>127kt</option><option>128kt</option><option>129kt</option><option>130kt</option><option>131kt</option><option>132kt</option><option>133kt</option><option>134kt</option><option>135kt</option>                </select>
             </td>
         </tr>
         <tr>
             <td>Dest</td>
-            <td><select class="airportSelect" data-step="3" data-text="Kies het veld van aankomst. De fieldelevation wordt automatisch ingevuld"></select></td>
+            <td><select class="airportSelect"></select></td>
             <td>elev:</td>
             <td><input class="elevationInput" value="<?= e($selectedFlight['destination_elevation'] ?? '') ?>" readonly/></td>
             <td>Take-off time:</td>
@@ -599,20 +789,20 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <td>Landing-time</td>
             <td><input class="time-input" type="time"/></td>
             <td>Reg</td>
-            <td><select class="aircraftSelect" id="aircraft" data-step="5" data-text="Kies hier het vliegtuig waar je mee gaat vliegen. Het type wordt automatisch ingevuld hierboven"></select></td>
-            <td><input type="number" value="<?= e($selectedFlight['destination_alt'] ?? '') ?>" data-step="7" data-text="Vlieghoogte op je bestemming? Let op de elevation"/></td>
+            <td><select class="aircraftSelect" id="aircraft"></select></td>
+            <td><input type="number" value="<?= e($selectedFlight['destination_alt'] ?? '') ?>"/></td>
             <td>
-                <select class="select-narrow" data-step="9" data-text="Temperatuur omgeving bij aankomst">
+                <select class="select-narrow">
                     <option selected></option>
                     <option>-1&#176;</option><option>0&#176;</option><option>1&#176;</option><option>2&#176;</option><option>3&#176;</option><option>4&#176;</option><option>5&#176;</option><option>6&#176;</option><option>7&#176;</option><option>8&#176;</option><option>9&#176;</option><option>10&#176;</option><option>11&#176;</option><option>12&#176;</option><option>13&#176;</option><option>14&#176;</option><option>15&#176;</option><option>16&#176;</option><option>17&#176;</option><option>18&#176;</option><option>19&#176;</option><option>20&#176;</option><option>21&#176;</option><option>22&#176;</option><option>23&#176;</option><option>24&#176;</option><option>25&#176;</option><option>26&#176;</option><option>27&#176;</option><option>28&#176;</option><option>29&#176;</option><option>30&#176;</option><option>31&#176;</option><option>32&#176;</option><option>33&#176;</option><option>34&#176;</option><option>35&#176;</option>                </select>
             </td>
             <td>
-                <select data-step="13" data-text="Indicated airspeed aankomst">
+                <select>
                     <option selected></option>
                     <option>70kt</option><option>71kt</option><option>72kt</option><option>73kt</option><option>74kt</option><option>75kt</option><option>76kt</option><option>77kt</option><option>78kt</option><option>79kt</option><option>80kt</option><option>81kt</option><option>82kt</option><option>83kt</option><option>84kt</option><option>85kt</option><option>86kt</option><option>87kt</option><option>88kt</option><option>89kt</option><option>90kt</option><option>91kt</option><option>92kt</option><option>93kt</option><option>94kt</option><option>95kt</option><option>96kt</option><option>97kt</option><option>98kt</option><option>99kt</option><option>100kt</option><option>101kt</option><option>102kt</option><option>103kt</option><option>104kt</option><option>105kt</option><option>106kt</option><option>107kt</option><option>108kt</option><option>109kt</option><option>110kt</option><option>111kt</option><option>112kt</option><option>113kt</option><option>114kt</option><option>115kt</option><option>116kt</option><option>117kt</option><option>118kt</option><option>119kt</option><option>120kt</option><option>121kt</option><option>122kt</option><option>123kt</option><option>124kt</option><option>125kt</option><option>126kt</option><option>127kt</option><option>128kt</option><option>129kt</option><option>130kt</option><option>131kt</option><option>132kt</option><option>133kt</option><option>134kt</option><option>135kt</option>                </select>
             </td>
             <td>
-                <select data-step="14" data-text="True airspeed aankomst">
+                <select>
                     <option selected></option>
                     <option>70kt</option><option>71kt</option><option>72kt</option><option>73kt</option><option>74kt</option><option>75kt</option><option>76kt</option><option>77kt</option><option>78kt</option><option>79kt</option><option>80kt</option><option>81kt</option><option>82kt</option><option>83kt</option><option>84kt</option><option>85kt</option><option>86kt</option><option>87kt</option><option>88kt</option><option>89kt</option><option>90kt</option><option>91kt</option><option>92kt</option><option>93kt</option><option>94kt</option><option>95kt</option><option>96kt</option><option>97kt</option><option>98kt</option><option>99kt</option><option>100kt</option><option>101kt</option><option>102kt</option><option>103kt</option><option>104kt</option><option>105kt</option><option>106kt</option><option>107kt</option><option>108kt</option><option>109kt</option><option>110kt</option><option>111kt</option><option>112kt</option><option>113kt</option><option>114kt</option><option>115kt</option><option>116kt</option><option>117kt</option><option>118kt</option><option>119kt</option><option>120kt</option><option>121kt</option><option>122kt</option><option>123kt</option><option>124kt</option><option>125kt</option><option>126kt</option><option>127kt</option><option>128kt</option><option>129kt</option><option>130kt</option><option>131kt</option><option>132kt</option><option>133kt</option><option>134kt</option><option>135kt</option>                </select>
             </td>

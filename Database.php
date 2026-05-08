@@ -1,4 +1,3 @@
-
 <?php
 
 /* =================================================
@@ -273,6 +272,70 @@ class Database
 
         return $statement->execute([
             'flight_id' => $flightId
+        ]);
+    }
+
+    /* =================================================
+       DELETE FLIGHT
+       Removes one flight from the database.
+       The legs must be removed before the flight because
+       the leg table has a foreign key to the flight table.
+    ================================================= */
+
+    public function deleteFlight(int $flightId): bool
+    {
+        $this->deleteLegsByFlightId($flightId);
+
+        $sql = 'DELETE FROM flight WHERE idFlight = :flight_id';
+        $statement = $this->connect()->prepare($sql);
+
+        return $statement->execute([
+            'flight_id' => $flightId
+        ]);
+    }
+
+    /* =================================================
+       UPDATE FLIGHT
+       Updates the main data of an existing flight.
+       The flight ID is used to make sure only the
+       selected flight is changed.
+    ================================================= */
+
+    public function updateFlight(
+        int $flightId,
+        string $date,
+        string $departure,
+        string $destination,
+        string $departureElevation,
+        string $destinationElevation,
+        int $departureAltitude,
+        int $destinationAltitude,
+        int $tas
+    ): bool {
+        $sql = 'UPDATE flight
+                SET
+                    date = :date,
+                    departure = :departure,
+                    destination = :destination,
+                    departure_elevation = :departure_elevation,
+                    destination_elevation = :destination_elevation,
+                    departure_alt = :departure_alt,
+                    destination_alt = :destination_alt,
+                    TAS = :tas
+                WHERE idFlight = :flight_id';
+
+        $statement = $this->connect()->prepare($sql);
+
+        return $statement->execute([
+            'flight_id' => $flightId,
+            'date' => $date,
+            'departure' => $departure,
+            'destination' => $destination,
+            'departure_elevation' => $departureElevation,
+            'destination_elevation' => $destinationElevation,
+            'departure_alt' => $departureAltitude,
+            'destination_alt' => $destinationAltitude,
+            'tas' => $tas
         ]);
     }
 

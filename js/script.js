@@ -291,27 +291,37 @@ function showStep() {
 
     const element = steps[currentStep];
 
-    // Keep the active field visible without jumping to the top of the page.
-    element.scrollIntoView({
-        behavior: 'auto',
-        block: 'center',
-        inline: 'nearest'
+    // If the field is inside a collapsed details panel, open that panel first.
+    const parentDetails = element.closest('details');
+
+    if (parentDetails && !parentDetails.open) {
+        parentDetails.open = true;
+    }
+
+    // Wait one frame so the browser can render the opened panel before measuring.
+    requestAnimationFrame(() => {
+        // Keep the active field visible without jumping to the top of the page.
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+        });
+
+        const rect = element.getBoundingClientRect();
+
+        // Highlight the current element.
+        steps.forEach(step => step.removeAttribute('data-highlight'));
+        element.setAttribute('data-highlight', 'true');
+
+        // Show the overlay and tooltip.
+        overlay.style.display = 'block';
+        tooltip.style.display = 'block';
+        text.textContent = element.dataset.text;
+
+        // Position the tooltip below the element.
+        tooltip.style.top = window.scrollY + rect.bottom + 10 + 'px';
+        tooltip.style.left = rect.left + 'px';
     });
-
-    const rect = element.getBoundingClientRect();
-
-    // Highlight the current element.
-    steps.forEach(step => step.removeAttribute('data-highlight'));
-    element.setAttribute('data-highlight', 'true');
-
-    // Show the overlay and tooltip.
-    overlay.style.display = 'block';
-    tooltip.style.display = 'block';
-    text.textContent = element.dataset.text;
-
-    // Position the tooltip below the element.
-    tooltip.style.top = window.scrollY + rect.bottom + 10 + 'px';
-    tooltip.style.left = rect.left + 'px';
 }
 
 function nextStep(event) {
@@ -350,4 +360,6 @@ function endGuide(event) {
     if (tooltip) tooltip.style.display = 'none';
 
     steps.forEach(step => step.removeAttribute('data-highlight'));
+    steps = [];
+    currentStep = 0;
 }
