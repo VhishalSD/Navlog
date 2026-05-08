@@ -1,1 +1,284 @@
 <?php
+
+declare(strict_types=1);
+
+/* =================================================
+   LEG CLASS
+   This class represents one NAVLOG leg.
+
+   A leg contains the values from one row in the
+   navigation log table. The class also contains the
+   aviation calculations for headings, wind correction,
+   ground speed, distance and time.
+================================================= */
+
+class Leg
+{
+    private int $legNumber;
+    private int $timeAcc;
+    private int $timeInt;
+    private ?string $eto;
+    private ?string $reto;
+    private ?string $ato;
+    private int $mef;
+    private int $cruise;
+    private string $checkpoint;
+    private ?int $frequency;
+    private int $headingVar;
+    private int $windDirection;
+    private int $windVelocity;
+    private int $trueTrack;
+    private int $distanceInterval;
+    private int $distanceAcc;
+    private int $tas;
+
+    public function __construct(
+        int $legNumber,
+        int $timeAcc,
+        int $timeInt,
+        ?string $eto,
+        ?string $reto,
+        ?string $ato,
+        int $mef,
+        int $cruise,
+        string $checkpoint,
+        ?int $frequency,
+        int $headingVar,
+        int $windDirection,
+        int $windVelocity,
+        int $trueTrack,
+        int $distanceInterval,
+        int $distanceAcc,
+        int $tas = 105
+    ) {
+        $this->legNumber = $legNumber;
+        $this->timeAcc = $timeAcc;
+        $this->timeInt = $timeInt;
+        $this->eto = $eto;
+        $this->reto = $reto;
+        $this->ato = $ato;
+        $this->mef = $mef;
+        $this->cruise = $cruise;
+        $this->checkpoint = $checkpoint;
+        $this->frequency = $frequency;
+        $this->headingVar = $headingVar;
+        $this->windDirection = $windDirection;
+        $this->windVelocity = $windVelocity;
+        $this->trueTrack = $trueTrack;
+        $this->distanceInterval = $distanceInterval;
+        $this->distanceAcc = $distanceAcc;
+        $this->tas = $tas;
+    }
+
+    /* =================================================
+       CREATE FROM DATABASE ROW
+       Converts one database row into a Leg object.
+    ================================================= */
+
+    public static function fromDatabaseRow(array $row, int $legNumber, int $tas = 105): self
+    {
+        return new self(
+            $legNumber,
+            (int)($row['time_acc'] ?? 0),
+            (int)($row['time_int'] ?? 0),
+            $row['ETO'] ?? null,
+            $row['RETO'] ?? null,
+            $row['ATO'] ?? null,
+            (int)($row['MEF'] ?? 0),
+            (int)($row['cruise'] ?? 0),
+            (string)($row['checkpoint_location'] ?? ''),
+            isset($row['checkpoint_frequency']) ? (int)$row['checkpoint_frequency'] : null,
+            (int)($row['var'] ?? 0),
+            (int)($row['wind_dir'] ?? 0),
+            (int)($row['wind_v'] ?? 0),
+            (int)($row['tt'] ?? 0),
+            (int)($row['dist_int'] ?? 0),
+            (int)($row['dist_acc'] ?? 0),
+            $tas
+        );
+    }
+
+    public function getLegNumber(): int
+    {
+        return $this->legNumber;
+    }
+
+    public function getTimeAcc(): int
+    {
+        return $this->timeAcc;
+    }
+
+    public function getTimeInterval(): int
+    {
+        return $this->timeInt;
+    }
+
+    public function getEto(): ?string
+    {
+        return $this->eto;
+    }
+
+    public function getReto(): ?string
+    {
+        return $this->reto;
+    }
+
+    public function getAto(): ?string
+    {
+        return $this->ato;
+    }
+
+    public function getMef(): int
+    {
+        return $this->mef;
+    }
+
+    public function getCruise(): int
+    {
+        return $this->cruise;
+    }
+
+    public function getCheckpoint(): string
+    {
+        return $this->checkpoint;
+    }
+
+    public function getFrequency(): ?int
+    {
+        return $this->frequency;
+    }
+
+    public function getHeadingVar(): int
+    {
+        return $this->headingVar;
+    }
+
+    public function getWindDirection(): int
+    {
+        return $this->windDirection;
+    }
+
+    public function getWindVelocity(): int
+    {
+        return $this->windVelocity;
+    }
+
+    public function getTrueTrack(): int
+    {
+        return $this->trueTrack;
+    }
+
+    public function getDistanceInterval(): int
+    {
+        return $this->distanceInterval;
+    }
+
+    public function getDistanceAcc(): int
+    {
+        return $this->distanceAcc;
+    }
+
+    public function getTas(): int
+    {
+        return $this->tas;
+    }
+
+    /* =================================================
+       CALCULATE WCA
+       Calculates the Wind Correction Angle.
+    ================================================= */
+
+    public function calculateHeadingWca(): int
+    {
+        if ($this->tas <= 0) {
+            return 0;
+        }
+
+        $angleDegrees = $this->trueTrack - ($this->windDirection - 180);
+        $angleRadians = deg2rad($angleDegrees);
+        $ratio = ($this->windVelocity * sin($angleRadians)) / $this->tas;
+        $ratio = max(-1, min(1, $ratio));
+
+        return (int)round(rad2deg(asin($ratio)));
+    }
+
+    /* =================================================
+       CALCULATE TRUE HEADING
+       True heading is true track plus WCA.
+    ================================================= */
+
+    public function calculateHeadingTh(): int
+    {
+        return $this->normalizeDegrees($this->trueTrack + $this->calculateHeadingWca());
+    }
+
+    /* =================================================
+       CALCULATE MAGNETIC HEADING
+       Magnetic heading is true heading minus variation.
+    ================================================= */
+
+    public function calculateHeadingMh(): int
+    {
+        return $this->normalizeDegrees($this->calculateHeadingTh() - $this->headingVar);
+    }
+
+    /* =================================================
+       CALCULATE GROUND SPEED
+       Calculates an estimated ground speed using wind.
+    ================================================= */
+
+    public function calculateGroundSpeed(): int
+    {
+        $windAngle = deg2rad($this->windDirection - $this->trueTrack);
+        $groundSpeed = $this->tas - ($this->windVelocity * cos($windAngle));
+
+        return max(0, (int)round($groundSpeed));
+    }
+
+    /* =================================================
+       NORMALIZE DEGREES
+       Keeps heading values between 0 and 359 degrees.
+    ================================================= */
+
+    private function normalizeDegrees(int|float $degrees): int
+    {
+        $degrees = (int)round($degrees) % 360;
+
+        if ($degrees < 0) {
+            $degrees += 360;
+        }
+
+        return $degrees;
+    }
+
+    /* =================================================
+       TO ARRAY
+       Makes it easy to show a Leg object in the GUI.
+    ================================================= */
+
+    public function toArray(): array
+    {
+        return [
+            'leg_number' => $this->legNumber,
+            'time_acc' => $this->timeAcc,
+            'time_int' => $this->timeInt,
+            'ETO' => $this->eto,
+            'RETO' => $this->reto,
+            'ATO' => $this->ato,
+            'MEF' => $this->mef,
+            'cruise' => $this->cruise,
+            'checkpoint_location' => $this->checkpoint,
+            'checkpoint_frequency' => $this->frequency,
+            'MH' => $this->calculateHeadingMh(),
+            'var' => $this->headingVar,
+            'TH' => $this->calculateHeadingTh(),
+            'WCA' => $this->calculateHeadingWca(),
+            'wind_dir' => $this->windDirection,
+            'wind_v' => $this->windVelocity,
+            'tt' => $this->trueTrack,
+            'dist_int' => $this->distanceInterval,
+            'dist_acc' => $this->distanceAcc,
+            'gs' => $this->calculateGroundSpeed()
+        ];
+    }
+}

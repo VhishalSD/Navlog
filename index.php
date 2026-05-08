@@ -15,6 +15,7 @@ $weatherScraper = new WeatherScraper();
 $flights = [];
 $selectedFlight = null;
 $selectedLegs = [];
+$legArray = new LegArray();
 $windData = null;
 $weatherIcaoCode = '';
 $weatherMessage = '';
@@ -122,7 +123,14 @@ try {
 
     if ($selectedFlightId !== null) {
         $selectedFlight = $db->getFlightById((int)$selectedFlightId);
-        $selectedLegs = $db->getLegsByFlightId((int)$selectedFlightId);
+        $databaseLegRows = $db->getLegsByFlightId((int)$selectedFlightId);
+        $tas = (int)($selectedFlight['TAS'] ?? 105);
+
+        // Convert database rows into Leg objects and store them in LegArray.
+        $legArray = LegArray::fromDatabaseRows($databaseLegRows, $tas);
+
+        // The GUI can read this array, while the project still uses OOP internally.
+        $selectedLegs = $legArray->toArray();
     }
 } catch (PDOException $exception) {
     $errorMessage = 'Database connection failed: ' . $exception->getMessage();
@@ -1037,7 +1045,7 @@ position: fixed;
                 </option>
             <?php endforeach; ?>
         </select>
-        <span style="margin-left: 20px;">Loaded legs: <?= count($selectedLegs) ?></span>
+        <span style="margin-left: 20px;">Loaded legs: <?= $legArray->count() ?></span>
     </form>
 
     <form id="weather-panel" method="post" class="weather-panel">
