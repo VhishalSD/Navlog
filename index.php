@@ -237,7 +237,7 @@ function e(?string $value): string
                 // Restore the original layout after printing.
                 if (main) main.style.marginLeft = origineleMargin;
                 if (nav) nav.style.display = origineleDisplay;
-            }, 100); // 100ms is meestal voldoende
+            }, 100); // 100ms is usually enough.
         }
 
 
@@ -654,6 +654,38 @@ font-family: Arial, sans-serif;
             color: black;
             padding: 10px;
             border: 2px solid #4f81bd;
+        }
+
+        .fuel-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(100px, 1fr));
+            gap: 8px;
+            align-items: end;
+            margin-top: 10px;
+        }
+
+        .fuel-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .fuel-field input {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #777;
+            background-color: #f2dcdb;
+            color: black;
+        }
+
+        .fuel-result {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #fff2cc;
+            border: 1px solid #4f81bd;
+            color: black;
+            font-weight: bold;
         }
 
         .add-leg-panel {
@@ -1080,9 +1112,49 @@ position: fixed;
 
     <section id="fuel-calculation-panel" class="database-panel">
         <strong>Fuel calculation</strong>
-        <p style="margin: 6px 0 0 0;">
-            Fuel calculation is kept as a separate NAVLOG section. This section will be linked to the selected flight.
-        </p>
+        <span style="margin-left: 20px;">
+            Selected flight: <?= $selectedFlight ? 'Flight ' . (int)$selectedFlight['idFlight'] . ' - ' . e($selectedFlight['departure']) . ' to ' . e($selectedFlight['destination']) : 'No flight selected' ?>
+        </span>
+
+        <div class="fuel-grid">
+            <div class="fuel-field">
+                <label>Fuel on board</label>
+                <input id="fuel_on_board" type="number" value="0" min="0" step="0.1">
+            </div>
+
+            <div class="fuel-field">
+                <label>Taxi fuel</label>
+                <input id="taxi_fuel" type="number" value="0" min="0" step="0.1">
+            </div>
+
+            <div class="fuel-field">
+                <label>Trip fuel</label>
+                <input id="trip_fuel" type="number" value="0" min="0" step="0.1">
+            </div>
+
+            <div class="fuel-field">
+                <label>Reserve fuel</label>
+                <input id="reserve_fuel" type="number" value="0" min="0" step="0.1">
+            </div>
+
+            <div class="fuel-field">
+                <label>Extra fuel</label>
+                <input id="extra_fuel" type="number" value="0" min="0" step="0.1">
+            </div>
+
+            <div class="fuel-field">
+                <label>Final reserve</label>
+                <input id="final_reserve_fuel" type="number" value="0" min="0" step="0.1">
+            </div>
+        </div>
+
+        <button type="button" class="add-flight-button" style="margin-top: 10px;" onclick="calculateFuel()">Calculate fuel</button>
+
+        <div class="fuel-result">
+            Total required fuel: <span id="total_required_fuel">—</span> |
+            Remaining fuel: <span id="remaining_fuel">—</span> |
+            Status: <span id="fuel_status">—</span>
+        </div>
     </section>
 
     <form id="taf-panel" method="post" class="weather-panel">
@@ -1605,6 +1677,30 @@ position: fixed;
 
 
 <script>
+    function getFuelNumber(id) {
+        const value = parseFloat(document.getElementById(id).value);
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    function calculateFuel() {
+        const fuelOnBoard = getFuelNumber('fuel_on_board');
+        const taxiFuel = getFuelNumber('taxi_fuel');
+        const tripFuel = getFuelNumber('trip_fuel');
+        const reserveFuel = getFuelNumber('reserve_fuel');
+        const extraFuel = getFuelNumber('extra_fuel');
+        const finalReserveFuel = getFuelNumber('final_reserve_fuel');
+
+        const totalRequiredFuel = taxiFuel + tripFuel + reserveFuel + extraFuel + finalReserveFuel;
+        const remainingFuel = fuelOnBoard - totalRequiredFuel;
+        const fuelStatus = remainingFuel >= 0 ? 'Enough fuel' : 'Not enough fuel';
+
+        document.getElementById('total_required_fuel').textContent = totalRequiredFuel.toFixed(1);
+        document.getElementById('remaining_fuel').textContent = remainingFuel.toFixed(1);
+        document.getElementById('fuel_status').textContent = fuelStatus;
+    }
+</script>
+
+<script>
 let currentStep = 0;
     let steps = [];
 
@@ -1629,7 +1725,7 @@ let currentStep = 0;
         steps.forEach(e => e.removeAttribute('data-highlight'));
         el.setAttribute('data-highlight', 'true');
 
-        // Overlay + tooltip
+        // Show the overlay and tooltip.
         overlay.style.display = 'block';
         tooltip.style.display = 'block';
         text.textContent = el.dataset.text;
