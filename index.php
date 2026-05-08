@@ -16,6 +16,33 @@ $selectedLegs = [];
 $errorMessage = '';
 
 try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_flight') {
+        $date = trim($_POST['date'] ?? '');
+        $departure = strtoupper(trim($_POST['departure'] ?? ''));
+        $destination = strtoupper(trim($_POST['destination'] ?? ''));
+        $departureElevation = trim($_POST['departure_elevation'] ?? '');
+        $destinationElevation = trim($_POST['destination_elevation'] ?? '');
+        $departureAltitude = filter_input(INPUT_POST, 'departure_altitude', FILTER_VALIDATE_INT);
+        $destinationAltitude = filter_input(INPUT_POST, 'destination_altitude', FILTER_VALIDATE_INT);
+        $tas = filter_input(INPUT_POST, 'tas', FILTER_VALIDATE_INT);
+
+        if ($date !== '' && $departure !== '' && $destination !== '' && $departureAltitude !== false && $destinationAltitude !== false && $tas !== false) {
+            $newFlightId = $db->addFlight(
+                $date,
+                $departure,
+                $destination,
+                $departureElevation,
+                $destinationElevation,
+                (int)$departureAltitude,
+                (int)$destinationAltitude,
+                (int)$tas
+            );
+
+            header('Location: index.php?flight_id=' . $newFlightId);
+            exit;
+        }
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_leg') {
         $flightId = filter_input(INPUT_POST, 'flight_id', FILTER_VALIDATE_INT);
         $checkpointLocation = trim($_POST['checkpoint_location'] ?? '');
@@ -575,6 +602,48 @@ font-family: Arial, sans-serif;
             border: 2px solid #4f81bd;
         }
 
+        .add-flight-panel {
+            width: 1250px;
+            margin-bottom: 10px;
+            background: #dce6f1;
+            color: black;
+            padding: 10px;
+            border: 2px solid #4f81bd;
+        }
+
+        .add-flight-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(90px, 1fr));
+            gap: 8px;
+            align-items: end;
+        }
+
+        .add-flight-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .add-flight-field input {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #777;
+            background-color: #f2dcdb;
+            color: black;
+        }
+
+        .add-flight-button {
+            height: 36px;
+            width: 140px;
+            margin: 0;
+            padding: 0;
+            border: 2px solid #333;
+            background-color: #9AA6B2;
+            color: midnightblue;
+            cursor: pointer;
+        }
+
         .add-leg-grid {
             display: grid;
             grid-template-columns: repeat(8, minmax(90px, 1fr));
@@ -874,6 +943,56 @@ position: fixed;
             <?php endforeach; ?>
         </select>
         <span style="margin-left: 20px;">Loaded legs: <?= count($selectedLegs) ?></span>
+    </form>
+
+    <form method="post" class="add-flight-panel">
+        <input type="hidden" name="action" value="add_flight">
+
+        <strong>Add new flight</strong>
+
+        <div class="add-flight-grid" style="margin-top: 10px;">
+            <div class="add-flight-field">
+                <label>Date</label>
+                <input type="date" name="date" required>
+            </div>
+
+            <div class="add-flight-field">
+                <label>Departure</label>
+                <input type="text" name="departure" placeholder="EHRD" required>
+            </div>
+
+            <div class="add-flight-field">
+                <label>Destination</label>
+                <input type="text" name="destination" placeholder="EHAM" required>
+            </div>
+
+            <div class="add-flight-field">
+                <label>Dept elev.</label>
+                <input type="text" name="departure_elevation" placeholder="-14">
+            </div>
+
+            <div class="add-flight-field">
+                <label>Dest elev.</label>
+                <input type="text" name="destination_elevation" placeholder="-11">
+            </div>
+
+            <div class="add-flight-field">
+                <label>Dept alt.</label>
+                <input type="number" name="departure_altitude" value="0" required>
+            </div>
+
+            <div class="add-flight-field">
+                <label>Dest alt.</label>
+                <input type="number" name="destination_altitude" value="0" required>
+            </div>
+
+            <div class="add-flight-field">
+                <label>TAS</label>
+                <input type="number" name="tas" value="105" required>
+            </div>
+        </div>
+
+        <button type="submit" class="add-flight-button" style="margin-top: 10px;">Save flight</button>
     </form>
 
     <?php if ($selectedFlight): ?>

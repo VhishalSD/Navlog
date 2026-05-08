@@ -52,6 +52,57 @@ class Database
     }
 
     /* =================================================
+       ADD FLIGHT
+       Saves a new flight in the database and returns
+       the ID of the newly created flight.
+    ================================================= */
+
+    public function addFlight(
+        string $date,
+        string $departure,
+        string $destination,
+        string $departureElevation,
+        string $destinationElevation,
+        int $departureAltitude,
+        int $destinationAltitude,
+        int $tas
+    ): int {
+        $sql = 'INSERT INTO flight (
+                    date,
+                    departure,
+                    destination,
+                    departure_elevation,
+                    destination_elevation,
+                    departure_alt,
+                    destination_alt,
+                    TAS
+                ) VALUES (
+                    :date,
+                    :departure,
+                    :destination,
+                    :departure_elevation,
+                    :destination_elevation,
+                    :departure_alt,
+                    :destination_alt,
+                    :tas
+                )';
+
+        $statement = $this->connect()->prepare($sql);
+        $statement->execute([
+            'date' => $date,
+            'departure' => $departure,
+            'destination' => $destination,
+            'departure_elevation' => $departureElevation,
+            'destination_elevation' => $destinationElevation,
+            'departure_alt' => $departureAltitude,
+            'destination_alt' => $destinationAltitude,
+            'tas' => $tas
+        ]);
+
+        return (int)$this->connect()->lastInsertId();
+    }
+
+    /* =================================================
        GET FLIGHT BY ID
        Gets one selected flight from the database.
     ================================================= */
