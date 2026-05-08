@@ -2,6 +2,7 @@
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/classes/Leg.php';
 require_once __DIR__ . '/classes/LegArray.php';
+require_once __DIR__ . '/classes/WeatherScraper.php';
 
 /* =================================================
    LOAD DATABASE DATA
@@ -10,12 +11,45 @@ require_once __DIR__ . '/classes/LegArray.php';
 ================================================= */
 
 $db = new Database();
+$weatherScraper = new WeatherScraper();
 $flights = [];
 $selectedFlight = null;
 $selectedLegs = [];
+$windData = null;
+$weatherIcaoCode = '';
+$weatherMessage = '';
+$tafData = null;
+$tafIcaoCode = '';
+$tafMessage = '';
 $errorMessage = '';
 
 try {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'get_wind_data') {
+        $icaoCode = strtoupper(trim($_POST['icao_code'] ?? ''));
+        $weatherIcaoCode = $icaoCode;
+
+        if ($icaoCode !== '') {
+            $windData = $weatherScraper->getWindData($icaoCode);
+
+            if ($windData === null) {
+                $weatherMessage = 'No KNMI wind data found for ' . $icaoCode . '.';
+            }
+        }
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'get_taf_data') {
+        $icaoCode = strtoupper(trim($_POST['taf_icao_code'] ?? ''));
+        $tafIcaoCode = $icaoCode;
+
+        if ($icaoCode !== '') {
+            $tafData = $weatherScraper->getTafData($icaoCode);
+
+            if ($tafData === null) {
+                $tafMessage = 'No TAF data found for ' . $icaoCode . '.';
+            }
+        }
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_flight') {
         $date = trim($_POST['date'] ?? '');
         $departure = strtoupper(trim($_POST['departure'] ?? ''));
@@ -584,6 +618,35 @@ font-family: Arial, sans-serif;
             width: 20%;
         }
 
+        .weather-panel {
+            width: 1250px;
+            margin-bottom: 10px;
+            background: #fff2cc;
+            color: black;
+            padding: 10px;
+            border: 2px solid #4f81bd;
+        }
+
+        .weather-panel input {
+            width: 120px;
+            height: 34px;
+            border: 1px solid #777;
+            background-color: #dce6f1;
+            color: black;
+            margin-left: 10px;
+        }
+
+        .weather-button {
+            height: 36px;
+            width: 140px;
+            margin: 0 0 0 10px;
+            padding: 0;
+            border: 2px solid #333;
+            background-color: #9AA6B2;
+            color: midnightblue;
+            cursor: pointer;
+        }
+
         .database-panel {
             width: 1250px;
             margin-bottom: 10px;
@@ -911,12 +974,12 @@ position: fixed;
 
     <nav class="menu">
         <ul>
-            <li><a href="">Open..</a></li>
-            <li><a href="">Opslaan als..</a></li>
-            <li><a href="#" onclick="addRows()">Nieuwe leg</a></li>
-            <li><a href="#" onclick="FuelCalc()">Fuel calculation</a></li>
-            <li><a href="">METAR</a></li>
-            <li><a href="">TAF</a></li>
+            <li><a href="#load-flight-panel">Open..</a></li>
+            <li><a href="#add-flight-panel">Opslaan als..</a></li>
+            <li><a href="#add-leg-panel">Nieuwe leg</a></li>
+            <li><a href="#fuel-calculation-panel">Fuel calculation</a></li>
+            <li><a href="#weather-panel">METAR</a></li>
+            <li><a href="#taf-panel">TAF</a></li>
         </ul>
     </nav>
 
@@ -933,7 +996,7 @@ position: fixed;
         </p>
     <?php endif; ?>
 
-    <form method="get" class="database-panel">
+    <form id="load-flight-panel" method="get" class="database-panel">
         <label for="flight_id"><strong>Load saved flight:</strong></label>
         <select id="flight_id" name="flight_id" onchange="this.form.submit()" style="width: 520px; margin-left: 10px;">
             <?php foreach ($flights as $flight): ?>
@@ -945,7 +1008,27 @@ position: fixed;
         <span style="margin-left: 20px;">Loaded legs: <?= count($selectedLegs) ?></span>
     </form>
 
-    <form method="post" class="add-flight-panel">
+    <form id="weather-panel" method="post" class="weather-panel">
+        <input type="hidden" name="action" value="get_wind_data">
+        <strong>KNMI wind data</strong>
+        <label for="icao_code" style="margin-left: 20px;">ICAO</label>
+        <input id="icao_code" type="text" name="icao_code" value="<?= e($weatherIcaoCode) ?>" placeholder="EHRD" maxlength="4" required>
+        <button type="submit" class="weather-button">Get wind data</button>
+
+        <?php if ($windData !== null): ?>
+            <span style="margin-left: 20px;">
+                ICAO: <?= e($windData['icao']) ?> |
+                Wind direction: <?= $windData['direction'] === null ? 'VRB' : e((string)$windData['direction']) ?> |
+                Wind speed: <?= e((string)$windData['speed']) ?> kt
+            </span>
+            <br>
+            <small style="display: block; margin-top: 6px;">METAR: <?= e($windData['metar']) ?></small>
+        <?php elseif ($weatherMessage !== ''): ?>
+            <span style="margin-left: 20px; color: #721c24;"> <?= e($weatherMessage) ?> </span>
+        <?php endif; ?>
+    </form>
+
+    <form id="add-flight-panel" method="post" class="add-flight-panel">
         <input type="hidden" name="action" value="add_flight">
 
         <strong>Add new flight</strong>
@@ -995,8 +1078,33 @@ position: fixed;
         <button type="submit" class="add-flight-button" style="margin-top: 10px;">Save flight</button>
     </form>
 
+    <section id="fuel-calculation-panel" class="database-panel">
+        <strong>Fuel calculation</strong>
+        <p style="margin: 6px 0 0 0;">
+            Fuel calculation is kept as a separate NAVLOG section. This section will be linked to the selected flight.
+        </p>
+    </section>
+
+    <form id="taf-panel" method="post" class="weather-panel">
+        <input type="hidden" name="action" value="get_taf_data">
+        <strong>TAF forecast</strong>
+        <label for="taf_icao_code" style="margin-left: 20px;">ICAO</label>
+        <input id="taf_icao_code" type="text" name="taf_icao_code" value="<?= e($tafIcaoCode) ?>" placeholder="EHAM" maxlength="4" required>
+        <button type="submit" class="weather-button">Get TAF</button>
+
+        <?php if ($tafData !== null): ?>
+            <span style="margin-left: 20px;">
+                ICAO: <?= e($tafData['icao']) ?>
+            </span>
+            <br>
+            <small style="display: block; margin-top: 6px;">TAF: <?= e($tafData['taf']) ?></small>
+        <?php elseif ($tafMessage !== ''): ?>
+            <span style="margin-left: 20px; color: #721c24;"> <?= e($tafMessage) ?> </span>
+        <?php endif; ?>
+    </form>
+
     <?php if ($selectedFlight): ?>
-        <form method="post" class="add-leg-panel">
+        <form id="add-leg-panel" method="post" class="add-leg-panel">
             <input type="hidden" name="action" value="add_leg">
             <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
 
