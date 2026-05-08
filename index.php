@@ -557,6 +557,57 @@ font-family: Arial, sans-serif;
             width: 20%;
         }
 
+        .database-panel {
+            width: 1250px;
+            margin-bottom: 10px;
+            background: #dce6f1;
+            color: black;
+            padding: 10px;
+            border: 2px solid #4f81bd;
+        }
+
+        .add-leg-panel {
+            width: 1250px;
+            margin-bottom: 10px;
+            background: #f2dcdb;
+            color: black;
+            padding: 10px;
+            border: 2px solid #4f81bd;
+        }
+
+        .add-leg-grid {
+            display: grid;
+            grid-template-columns: repeat(8, minmax(90px, 1fr));
+            gap: 8px;
+            align-items: end;
+        }
+
+        .add-leg-field label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .add-leg-field input {
+            width: 100%;
+            height: 34px;
+            border: 1px solid #777;
+            background-color: #dce6f1;
+            color: black;
+        }
+
+        .add-leg-button {
+            height: 36px;
+            width: 120px;
+            margin: 0;
+            padding: 0;
+            border: 2px solid #333;
+            background-color: #9AA6B2;
+            color: midnightblue;
+            cursor: pointer;
+        }
+
 
         .home .tils,
         .home .links,
@@ -813,7 +864,7 @@ position: fixed;
         </p>
     <?php endif; ?>
 
-    <form method="get" style="width: 1250px; margin-bottom: 10px; background: #dce6f1; color: black; padding: 10px; border: 2px solid #4f81bd;">
+    <form method="get" class="database-panel">
         <label for="flight_id"><strong>Load saved flight:</strong></label>
         <select id="flight_id" name="flight_id" onchange="this.form.submit()" style="width: 520px; margin-left: 10px;">
             <?php foreach ($flights as $flight): ?>
@@ -826,67 +877,99 @@ position: fixed;
     </form>
 
     <?php if ($selectedFlight): ?>
-        <form method="post" style="width: 1250px; margin-bottom: 10px; background: #f2dcdb; color: black; padding: 10px; border: 2px solid #4f81bd;">
+        <form method="post" class="add-leg-panel">
             <input type="hidden" name="action" value="add_leg">
             <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
 
-            <strong>Add leg to selected flight</strong><br><br>
+            <strong>Add leg to selected flight</strong>
 
-            <label>Checkpoint</label>
-            <input type="text" name="checkpoint_location" required style="width: 130px;">
+            <div class="add-leg-grid" style="margin-top: 10px;">
+                <div class="add-leg-field">
+                    <label>Checkpoint</label>
+                    <input type="text" name="checkpoint_location" required>
+                </div>
 
-            <label>Freq</label>
-            <input type="number" name="checkpoint_frequency" style="width: 90px;">
+                <div class="add-leg-field">
+                    <label>Frequency</label>
+                    <input type="number" name="checkpoint_frequency">
+                </div>
 
-            <label>Time Acc</label>
-            <input type="number" name="time_acc" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>Time Acc</label>
+                    <input type="number" name="time_acc" value="0">
+                </div>
 
-            <label>Time Int</label>
-            <input type="number" name="time_int" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>Time Int</label>
+                    <input type="number" name="time_int" value="0">
+                </div>
 
-            <label>MEF</label>
-            <input type="number" name="mef" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>MEF</label>
+                    <input type="number" name="mef" value="0">
+                </div>
 
-            <label>Cruise</label>
-            <input type="number" name="cruise" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>Cruise</label>
+                    <input type="number" name="cruise" value="0">
+                </div>
 
-            <label>MH</label>
-            <input type="number" name="mh" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>MH</label>
+                    <input type="number" name="mh" value="0">
+                </div>
 
-            <label>Var</label>
-            <input type="number" name="variation" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>Variation</label>
+                    <input type="number" name="variation" value="0">
+                </div>
 
-            <label>TH</label>
-            <input type="number" name="th" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>TH</label>
+                    <input type="number" name="th" value="0">
+                </div>
 
-            <label>WCA</label>
-            <input type="number" name="wca" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>WCA</label>
+                    <input type="number" name="wca" value="0">
+                </div>
 
-            <br><br>
+                <div class="add-leg-field">
+                    <label>Wind dir</label>
+                    <input type="number" name="wind_dir" value="0">
+                </div>
 
-            <label>Wind dir</label>
-            <input type="number" name="wind_dir" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>Wind V</label>
+                    <input type="number" name="wind_v" value="0">
+                </div>
 
-            <label>Wind V</label>
-            <input type="number" name="wind_v" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>TT</label>
+                    <input type="number" name="tt" value="0">
+                </div>
 
-            <label>TT</label>
-            <input type="number" name="tt" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>Dist Int</label>
+                    <input type="number" name="dist_int" value="0">
+                </div>
 
-            <label>Dist Int</label>
-            <input type="number" name="dist_int" value="0" style="width: 70px;">
+                <div class="add-leg-field">
+                    <label>Dist Acc</label>
+                    <input type="number" name="dist_acc" value="0">
+                </div>
 
-            <label>Dist Acc</label>
-            <input type="number" name="dist_acc" value="0" style="width: 70px;">
-
-            <label>GS</label>
-            <input type="number" name="gs" value="0" style="width: 60px;">
+                <div class="add-leg-field">
+                    <label>GS</label>
+                    <input type="number" name="gs" value="0">
+                </div>
+            </div>
 
             <input type="hidden" name="eto" value="">
             <input type="hidden" name="reto" value="">
             <input type="hidden" name="ato" value="">
 
-            <button type="submit" style="width: 140px; margin-left: 15px;">Save leg</button>
+            <button type="submit" class="add-leg-button" style="margin-top: 10px;">Save leg</button>
         </form>
     <?php endif; ?>
 
