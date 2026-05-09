@@ -254,6 +254,15 @@ function getFuelNumber(id) {
 }
 
 function calculateFuel() {
+    const totalRequiredFuelOutput = document.getElementById('total_required_fuel');
+    const remainingFuelOutput = document.getElementById('remaining_fuel');
+    const fuelStatusOutput = document.getElementById('fuel_status');
+
+    // Stop safely if the fuel result fields are not available on the page.
+    if (!totalRequiredFuelOutput || !remainingFuelOutput || !fuelStatusOutput) {
+        return;
+    }
+
     const fuelOnBoard = getFuelNumber('fuel_on_board');
     const taxiFuel = getFuelNumber('taxi_fuel');
     const tripFuel = getFuelNumber('trip_fuel');
@@ -265,9 +274,9 @@ function calculateFuel() {
     const remainingFuel = fuelOnBoard - totalRequiredFuel;
     const fuelStatus = remainingFuel >= 0 ? 'Enough fuel' : 'Not enough fuel';
 
-    document.getElementById('total_required_fuel').textContent = totalRequiredFuel.toFixed(1);
-    document.getElementById('remaining_fuel').textContent = remainingFuel.toFixed(1);
-    document.getElementById('fuel_status').textContent = fuelStatus;
+    totalRequiredFuelOutput.textContent = totalRequiredFuel.toFixed(1);
+    remainingFuelOutput.textContent = remainingFuel.toFixed(1);
+    fuelStatusOutput.textContent = fuelStatus;
 }
 
 let currentStep = 0;
@@ -362,4 +371,42 @@ function endGuide(event) {
     steps.forEach(step => step.removeAttribute('data-highlight'));
     steps = [];
     currentStep = 0;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const successMessage = document.querySelector('.success-message');
+
+    if (successMessage) {
+        setTimeout(() => {
+            successMessage.style.display = 'none';
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('success');
+            window.history.replaceState({}, '', url.toString());
+        }, 4000);
+    }
+});
+
+function openDeleteFlightModal() {
+    const modal = document.getElementById('delete-flight-modal');
+
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeDeleteFlightModal() {
+    const modal = document.getElementById('delete-flight-modal');
+
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function submitDeleteFlightForm() {
+    const deleteForm = document.getElementById('delete-flight-form');
+
+    if (deleteForm) {
+        deleteForm.submit();
+    }
 }

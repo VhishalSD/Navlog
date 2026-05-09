@@ -16,6 +16,7 @@ $flights = [];
 $selectedFlight = null;
 $selectedLegs = [];
 $legArray = new LegArray();
+$editLeg = null;
 $windData = null;
 $weatherIcaoCode = '';
 $weatherMessage = '';
@@ -25,6 +26,7 @@ $tafMessage = '';
 $errorMessage = '';
 $successMessage = '';
 $validationErrors = [];
+$fieldErrors = [];
 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'get_wind_data') {
@@ -209,14 +211,17 @@ try {
 
         if ($checkpointLocation === '') {
             $validationErrors[] = 'Checkpoint is required.';
+            $fieldErrors['checkpoint_location'] = 'Checkpoint is required.';
         }
 
         if (mb_strlen($checkpointLocation) > 100) {
             $validationErrors[] = 'Checkpoint may not be longer than 100 characters.';
+            $fieldErrors['checkpoint_location'] = 'Checkpoint may not be longer than 100 characters.';
         }
 
         if (($_POST['checkpoint_frequency'] ?? '') !== '' && ($checkpointFrequency === false || !isInRange((int)$checkpointFrequency, 1, 999999))) {
             $validationErrors[] = 'Checkpoint frequency must be a whole number between 1 and 999999.';
+            $fieldErrors['checkpoint_frequency'] = 'Checkpoint frequency must be a whole number between 1 and 999999.';
         }
 
         $timeAcc = validatePostIntRange('time_acc', 'Time Acc', 0, 1440, $validationErrors);
@@ -266,6 +271,113 @@ try {
         $errorMessage = implode(' ', $validationErrors);
     }
 
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_leg') {
+        $legId = filter_input(INPUT_POST, 'leg_id', FILTER_VALIDATE_INT);
+        $flightId = filter_input(INPUT_POST, 'flight_id', FILTER_VALIDATE_INT);
+        $checkpointLocation = trim($_POST['checkpoint_location'] ?? '');
+        $checkpointFrequency = filter_input(INPUT_POST, 'checkpoint_frequency', FILTER_VALIDATE_INT);
+
+        if (!$legId) {
+            $validationErrors[] = 'A valid leg must be selected before updating.';
+        }
+
+        if (!$flightId) {
+            $validationErrors[] = 'A valid flight must be selected before updating a leg.';
+        }
+
+        if ($checkpointLocation === '') {
+            $validationErrors[] = 'Checkpoint is required.';
+            $fieldErrors['checkpoint_location'] = 'Checkpoint is required.';
+        }
+
+        if (mb_strlen($checkpointLocation) > 100) {
+            $validationErrors[] = 'Checkpoint may not be longer than 100 characters.';
+            $fieldErrors['checkpoint_location'] = 'Checkpoint may not be longer than 100 characters.';
+        }
+
+        if (($_POST['checkpoint_frequency'] ?? '') !== '' && ($checkpointFrequency === false || !isInRange((int)$checkpointFrequency, 1, 999999))) {
+            $validationErrors[] = 'Checkpoint frequency must be a whole number between 1 and 999999.';
+            $fieldErrors['checkpoint_frequency'] = 'Checkpoint frequency must be a whole number between 1 and 999999.';
+        }
+
+        $timeAcc = validatePostIntRange('time_acc', 'Time Acc', 0, 1440, $validationErrors);
+        $timeInt = validatePostIntRange('time_int', 'Time Int', 0, 1440, $validationErrors);
+        $mef = validatePostIntRange('mef', 'MEF', 0, 60000, $validationErrors);
+        $cruise = validatePostIntRange('cruise', 'Cruise altitude', 0, 60000, $validationErrors);
+        $mh = validatePostIntRange('mh', 'MH', 0, 360, $validationErrors);
+        $variation = validatePostIntRange('variation', 'Variation', -180, 180, $validationErrors);
+        $th = validatePostIntRange('th', 'TH', 0, 360, $validationErrors);
+        $wca = validatePostIntRange('wca', 'WCA', -90, 90, $validationErrors);
+        $windDir = validatePostIntRange('wind_dir', 'Wind direction', 0, 360, $validationErrors);
+        $windV = validatePostIntRange('wind_v', 'Wind speed', 0, 250, $validationErrors);
+        $tt = validatePostIntRange('tt', 'TT', 0, 360, $validationErrors);
+        $distInt = validatePostIntRange('dist_int', 'Distance interval', 0, 10000, $validationErrors);
+        $distAcc = validatePostIntRange('dist_acc', 'Distance accumulated', 0, 10000, $validationErrors);
+        $gs = validatePostIntRange('gs', 'Ground speed', 0, 500, $validationErrors);
+
+        if (empty($validationErrors)) {
+            $updated = $db->updateLeg(
+                (int)$legId,
+                $checkpointLocation,
+                $checkpointFrequency ?: null,
+                $timeAcc,
+                $timeInt,
+                $_POST['eto'] ?? null,
+                $_POST['reto'] ?? null,
+                $_POST['ato'] ?? null,
+                $mef,
+                $cruise,
+                $mh,
+                $variation,
+                $th,
+                $wca,
+                $windDir,
+                $windV,
+                $tt,
+                $distInt,
+                $distAcc,
+                $gs
+            );
+
+            if ($updated) {
+                header('Location: index.php?flight_id=' . $flightId . '&success=leg_updated');
+                exit;
+            }
+
+            $validationErrors[] = 'Selected leg could not be updated.';
+        }
+
+        $errorMessage = implode(' ', $validationErrors);
+        $editLeg = $_POST;
+        $editLeg['idLeg'] = $legId;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_leg') {
+        $legId = filter_input(INPUT_POST, 'leg_id', FILTER_VALIDATE_INT);
+        $flightId = filter_input(INPUT_POST, 'flight_id', FILTER_VALIDATE_INT);
+
+        if (!$legId) {
+            $validationErrors[] = 'A valid leg must be selected before deleting.';
+        }
+
+        if (!$flightId) {
+            $validationErrors[] = 'A valid flight must be selected before deleting a leg.';
+        }
+
+        if (empty($validationErrors)) {
+            $deleted = $db->deleteLegById((int)$legId);
+
+            if ($deleted) {
+                header('Location: index.php?flight_id=' . $flightId . '&success=leg_deleted');
+                exit;
+            }
+
+            $validationErrors[] = 'Selected leg could not be deleted.';
+        }
+
+        $errorMessage = implode(' ', $validationErrors);
+    }
+
     $flights = $db->getFlights();
 
     $selectedFlightId = filter_input(INPUT_GET, 'flight_id', FILTER_VALIDATE_INT);
@@ -284,6 +396,16 @@ try {
 
         // The GUI can read this array, while the project still uses OOP internally.
         $selectedLegs = $legArray->toArray();
+
+        $editLegId = filter_input(INPUT_GET, 'edit_leg_id', FILTER_VALIDATE_INT);
+
+        if ($editLegId) {
+            $editLeg = $db->getLegById((int)$editLegId);
+
+            if ($editLeg !== null && (int)$editLeg['Flight_idFlight'] !== (int)$selectedFlightId) {
+                $editLeg = null;
+            }
+        }
     }
 } catch (PDOException $exception) {
     $errorMessage = 'Database connection failed: ' . $exception->getMessage();
@@ -299,11 +421,27 @@ if ($successCode === 'flight_saved') {
     $successMessage = 'Flight deleted successfully.';
 } elseif ($successCode === 'leg_saved') {
     $successMessage = 'Leg saved successfully.';
+} elseif ($successCode === 'leg_updated') {
+    $successMessage = 'Leg updated successfully.';
+} elseif ($successCode === 'leg_deleted') {
+    $successMessage = 'Leg deleted successfully.';
 }
+
 
 function e(?string $value): string
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function oldValue(string $fieldName, string $default = ''): string
+{
+    global $fieldErrors;
+
+    if (isset($fieldErrors[$fieldName])) {
+        return '';
+    }
+
+    return e((string)($_POST[$fieldName] ?? $default));
 }
 
 function isValidIcaoCode(string $icaoCode): bool
@@ -329,7 +467,9 @@ function isInRange(int $value, int $min, int $max): bool
 
 function validatePostIntRange(string $fieldName, string $label, int $min, int $max, array &$validationErrors): int
 {
-    $rawValue = $_POST[$fieldName] ?? '0';
+    global $fieldErrors;
+
+    $rawValue = $_POST[$fieldName] ?? '';
 
     if ($rawValue === '') {
         return 0;
@@ -338,7 +478,9 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     $value = filter_var($rawValue, FILTER_VALIDATE_INT);
 
     if ($value === false || !isInRange((int)$value, $min, $max)) {
-        $validationErrors[] = $label . ' must be a whole number between ' . $min . ' and ' . $max . '.';
+        $message = $label . ' must be a whole number between ' . $min . ' and ' . $max . '.';
+        $validationErrors[] = $message;
+        $fieldErrors[$fieldName] = $message;
         return 0;
     }
 
@@ -382,7 +524,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <h1>Navigatielog</h1>
     </header>
 
-    <?php if ($errorMessage !== ''): ?>
+    <?php if ($errorMessage !== '' && ($_POST['action'] ?? '') !== 'add_leg'): ?>
         <div class="error-message">
             <strong>Please fix the following:</strong>
             <ul>
@@ -471,22 +613,13 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
                 <div class="manage-flight-action-row">
                     <button type="submit" class="add-flight-button manage-flight-button">Update flight</button>
 
-                    <button
-                            type="submit"
-                            class="delete-flight-button"
-                            form="delete-flight-form"
-                    >
+                    <button type="button" class="delete-flight-button" onclick="openDeleteFlightModal()">
                         Delete flight
                     </button>
                 </div>
             </form>
 
-            <form
-                    id="delete-flight-form"
-                    method="post"
-                    class="delete-flight-form"
-                    onsubmit="return confirm('Are you sure you want to delete this flight and its legs?');"
-            >
+            <form id="delete-flight-form" method="post" class="delete-flight-form">
                 <input type="hidden" name="action" value="delete_flight">
                 <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
             </form>
@@ -517,48 +650,48 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <span>Add new flight</span>
         </summary>
 
-        <form method="post">
+        <form method="post" action="index.php#add-flight-panel">
             <input type="hidden" name="action" value="add_flight">
 
             <div class="add-flight-grid">
                 <div class="add-flight-field">
                     <label>Date</label>
-                    <input type="date" name="date" required data-step="2" data-text="Vul hier de datum van de flight in.">
+                    <input type="date" name="date" value="<?= oldValue('date') ?>" required data-step="2" data-text="Vul hier de datum van de flight in.">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Departure</label>
-                    <input type="text" name="departure" placeholder="EHRD" required data-step="3" data-text="Vul hier de departure ICAO-code in, bijvoorbeeld EHRD.">
+                    <input type="text" name="departure" value="<?= oldValue('departure') ?>" placeholder="EHRD" required data-step="3" data-text="Vul hier de departure ICAO-code in, bijvoorbeeld EHRD.">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Destination</label>
-                    <input type="text" name="destination" placeholder="EHAM" required data-step="4" data-text="Vul hier de destination ICAO-code in, bijvoorbeeld EHAM.">
+                    <input type="text" name="destination" value="<?= oldValue('destination') ?>" placeholder="EHAM" required data-step="4" data-text="Vul hier de destination ICAO-code in, bijvoorbeeld EHAM.">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Dept elev.</label>
-                    <input type="text" name="departure_elevation" placeholder="-14">
+                    <input type="text" name="departure_elevation" value="<?= oldValue('departure_elevation') ?>" placeholder="-14">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Dest elev.</label>
-                    <input type="text" name="destination_elevation" placeholder="-11">
+                    <input type="text" name="destination_elevation" value="<?= oldValue('destination_elevation') ?>" placeholder="-11">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Dept alt.</label>
-                    <input type="number" name="departure_altitude" value="0" required>
+                    <input type="number" name="departure_altitude" value="<?= oldValue('departure_altitude') ?>" required>
                 </div>
 
                 <div class="add-flight-field">
                     <label>Dest alt.</label>
-                    <input type="number" name="destination_altitude" value="0" required>
+                    <input type="number" name="destination_altitude" value="<?= oldValue('destination_altitude') ?>" required>
                 </div>
 
                 <div class="add-flight-field">
                     <label>TAS</label>
-                    <input type="number" name="tas" value="105" required data-step="5" data-text="Vul hier de true airspeed in. Dit moet een positief getal zijn.">
+                    <input type="number" name="tas" value="<?= oldValue('tas') ?>" required data-step="5" data-text="Vul hier de true airspeed in. Dit moet een positief getal zijn.">
                 </div>
             </div>
 
@@ -578,32 +711,32 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <div class="fuel-grid">
             <div class="fuel-field">
                 <label>Fuel on board</label>
-                <input id="fuel_on_board" type="number" value="0" min="0" step="0.1" data-step="6" data-text="Vul hier de hoeveelheid fuel on board in.">
+                <input id="fuel_on_board" type="number" value="" min="0" step="0.1" data-step="6" data-text="Vul hier de hoeveelheid fuel on board in.">
             </div>
 
             <div class="fuel-field">
                 <label>Taxi fuel</label>
-                <input id="taxi_fuel" type="number" value="0" min="0" step="0.1">
+                <input id="taxi_fuel" type="number" value="" min="0" step="0.1">
             </div>
 
             <div class="fuel-field">
                 <label>Trip fuel</label>
-                <input id="trip_fuel" type="number" value="0" min="0" step="0.1" data-step="7" data-text="Vul hier de trip fuel in voor de vlucht.">
+                <input id="trip_fuel" type="number" value="" min="0" step="0.1" data-step="7" data-text="Vul hier de trip fuel in voor de vlucht.">
             </div>
 
             <div class="fuel-field">
                 <label>Reserve fuel</label>
-                <input id="reserve_fuel" type="number" value="0" min="0" step="0.1">
+                <input id="reserve_fuel" type="number" value="" min="0" step="0.1">
             </div>
 
             <div class="fuel-field">
                 <label>Extra fuel</label>
-                <input id="extra_fuel" type="number" value="0" min="0" step="0.1">
+                <input id="extra_fuel" type="number" value="" min="0" step="0.1">
             </div>
 
             <div class="fuel-field">
                 <label>Final reserve</label>
-                <input id="final_reserve_fuel" type="number" value="0" min="0" step="0.1">
+                <input id="final_reserve_fuel" type="number" value="" min="0" step="0.1">
             </div>
         </div>
 
@@ -635,102 +768,120 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     </form>
 
     <?php if ($selectedFlight): ?>
-        <details id="add-leg-panel" class="add-leg-panel collapsible-panel">
+        <details id="add-leg-panel" class="add-leg-panel collapsible-panel" <?= ((($_POST['action'] ?? '') === 'add_leg' || ($_POST['action'] ?? '') === 'update_leg') && $errorMessage !== '') || $editLeg !== null ? 'open' : '' ?>>
             <summary class="panel-summary">
-                <span>Add leg to selected flight</span>
+                <span><?= $editLeg !== null ? 'Edit selected leg' : 'Add leg to selected flight' ?></span>
             </summary>
 
-            <form method="post">
-                <input type="hidden" name="action" value="add_leg">
+            <?php if ((($_POST['action'] ?? '') === 'add_leg' || ($_POST['action'] ?? '') === 'update_leg') && $errorMessage !== ''): ?>
+                <div class="error-message form-error-message">
+                    <strong>Please fix the following:</strong>
+                    <ul>
+                        <?php foreach ($validationErrors as $message): ?>
+                            <li><?= e($message) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
+
+            <form method="post" action="index.php?flight_id=<?= (int)$selectedFlight['idFlight'] ?>#add-leg-panel">
+                <input type="hidden" name="action" value="<?= $editLeg !== null ? 'update_leg' : 'add_leg' ?>">
                 <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
+                <?php if ($editLeg !== null): ?>
+                    <input type="hidden" name="leg_id" value="<?= (int)$editLeg['idLeg'] ?>">
+                <?php endif; ?>
 
                 <div class="add-leg-grid">
                     <div class="add-leg-field">
                         <label>Checkpoint</label>
-                        <input type="text" name="checkpoint_location" required data-step="9" data-text="Vul hier de checkpointnaam of locatie in. Dit veld is verplicht.">
+                        <input type="text" name="checkpoint_location" value="<?= oldValue('checkpoint_location', (string)($editLeg['checkpoint_location'] ?? '')) ?>" required data-step="9" data-text="Vul hier de checkpointnaam of locatie in. Dit veld is verplicht.">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Frequency</label>
-                        <input type="number" name="checkpoint_frequency" data-step="10" data-text="Vul hier optioneel de radiofrequentie van het checkpoint in.">
+                        <input type="number" name="checkpoint_frequency" value="<?= oldValue('checkpoint_frequency', (string)($editLeg['checkpoint_frequency'] ?? '')) ?>" data-step="10" data-text="Vul hier optioneel de radiofrequentie van het checkpoint in.">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Time Acc</label>
-                        <input type="number" name="time_acc" value="0">
+                        <input type="number" name="time_acc" value="<?= oldValue('time_acc', (string)($editLeg['time_acc'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Time Int</label>
-                        <input type="number" name="time_int" value="0" data-step="11" data-text="Vul hier de time interval van deze leg in minuten in.">
+                        <input type="number" name="time_int" value="<?= oldValue('time_int', (string)($editLeg['time_int'] ?? '')) ?>" data-step="11" data-text="Vul hier de time interval van deze leg in minuten in.">
                     </div>
 
                     <div class="add-leg-field">
                         <label>MEF</label>
-                        <input type="number" name="mef" value="0">
+                        <input type="number" name="mef" value="<?= oldValue('mef', (string)($editLeg['MEF'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Cruise</label>
-                        <input type="number" name="cruise" value="0">
+                        <input type="number" name="cruise" value="<?= oldValue('cruise', (string)($editLeg['cruise'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>MH</label>
-                        <input type="number" name="mh" value="0" data-step="12" data-text="Vul hier de magnetic heading in. Dit moet tussen 0 en 360 liggen.">
+                        <input type="number" name="mh" value="<?= oldValue('mh', (string)($editLeg['MH'] ?? '')) ?>" data-step="12" data-text="Vul hier de magnetic heading in. Dit moet tussen 0 en 360 liggen.">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Variation</label>
-                        <input type="number" name="variation" value="0">
+                        <input type="number" name="variation" value="<?= oldValue('variation', (string)($editLeg['var'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>TH</label>
-                        <input type="number" name="th" value="0">
+                        <input type="number" name="th" value="<?= oldValue('th', (string)($editLeg['TH'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>WCA</label>
-                        <input type="number" name="wca" value="0">
+                        <input type="number" name="wca" value="<?= oldValue('wca', (string)($editLeg['WCA'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Wind dir</label>
-                        <input type="number" name="wind_dir" value="0">
+                        <input type="number" name="wind_dir" value="<?= oldValue('wind_dir', (string)($editLeg['wind_dir'] ?? ($windData !== null && $windData['direction'] !== null ? (string)$windData['direction'] : ''))) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Wind V</label>
-                        <input type="number" name="wind_v" value="0">
+                        <input type="number" name="wind_v" value="<?= oldValue('wind_v', (string)($editLeg['wind_v'] ?? ($windData !== null ? (string)$windData['speed'] : ''))) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>TT</label>
-                        <input type="number" name="tt" value="0">
+                        <input type="number" name="tt" value="<?= oldValue('tt', (string)($editLeg['tt'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Dist Int</label>
-                        <input type="number" name="dist_int" value="0">
+                        <input type="number" name="dist_int" value="<?= oldValue('dist_int', (string)($editLeg['dist_int'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Dist Acc</label>
-                        <input type="number" name="dist_acc" value="0">
+                        <input type="number" name="dist_acc" value="<?= oldValue('dist_acc', (string)($editLeg['dist_acc'] ?? '')) ?>">
                     </div>
 
                     <div class="add-leg-field">
                         <label>GS</label>
-                        <input type="number" name="gs" value="0">
+                        <input type="number" name="gs" value="<?= oldValue('gs', (string)($editLeg['gs'] ?? '')) ?>">
                     </div>
                 </div>
 
-                <input type="hidden" name="eto" value="">
-                <input type="hidden" name="reto" value="">
-                <input type="hidden" name="ato" value="">
+                <input type="hidden" name="eto" value="<?= oldValue('eto', (string)($editLeg['ETO'] ?? '')) ?>">
+                <input type="hidden" name="reto" value="<?= oldValue('reto', (string)($editLeg['RETO'] ?? '')) ?>">
+                <input type="hidden" name="ato" value="<?= oldValue('ato', (string)($editLeg['ATO'] ?? '')) ?>">
 
-                <button type="submit" class="add-leg-button add-leg-save-button">Save leg</button>
+                <button type="submit" class="add-leg-button add-leg-save-button"><?= $editLeg !== null ? 'Update leg' : 'Save leg' ?></button>
+
+                <?php if ($editLeg !== null): ?>
+                    <a class="add-leg-cancel-link" href="index.php?flight_id=<?= (int)$selectedFlight['idFlight'] ?>#table2">Cancel edit</a>
+                <?php endif; ?>
 
             </form>
         </details>
@@ -864,9 +1015,23 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             $isEvenRow = $rowNumber % 2 === 0;
             $blueCellClass = $isEvenRow ? 'cell-blue-dark' : 'cell-blue-light';
             $pinkCellClass = $isEvenRow ? 'cell-pink-dark' : 'cell-pink-light';
+            $databaseLeg = $databaseLegRows[$rowNumber - 1] ?? null;
         ?>
             <tr>
-                <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= $rowNumber ?> &darr;" onclick="PutThroughLegInfo(<?= $rowNumber ?>)"/></td>
+                <td>
+                    <input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= $rowNumber ?> &darr;" onclick="PutThroughLegInfo(<?= $rowNumber ?>)"/>
+                    <?php if ($databaseLeg !== null): ?>
+                        <div class="leg-row-actions">
+                            <a href="index.php?flight_id=<?= (int)$selectedFlight['idFlight'] ?>&edit_leg_id=<?= (int)$databaseLeg['idLeg'] ?>#add-leg-panel">Edit</a>
+                            <form method="post" action="index.php?flight_id=<?= (int)$selectedFlight['idFlight'] ?>#table2" onsubmit="return confirm('Delete this leg?');">
+                                <input type="hidden" name="action" value="delete_leg">
+                                <input type="hidden" name="flight_id" value="<?= (int)$selectedFlight['idFlight'] ?>">
+                                <input type="hidden" name="leg_id" value="<?= (int)$databaseLeg['idLeg'] ?>">
+                                <button type="submit">Delete</button>
+                            </form>
+                        </div>
+                    <?php endif; ?>
+                </td>
                 <td><input class="navlog-input <?= $pinkCellClass ?>" type="text" value="<?= e($leg['time_acc'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $pinkCellClass ?>" type="text" value="<?= e($leg['time_int'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['ETO'] ?? '') ?>"/></td>
@@ -951,9 +1116,17 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     </footer>
 </article>
 
+<div id="delete-flight-modal" class="delete-modal-overlay">
+    <div class="delete-modal-box">
+        <h2>Delete flight?</h2>
+        <p>This will delete the selected flight and all legs connected to it.</p>
 
-
-
+        <div class="delete-modal-actions">
+            <button type="button" class="modal-cancel-button" onclick="closeDeleteFlightModal()">Cancel</button>
+            <button type="button" class="modal-delete-button" onclick="submitDeleteFlightForm()">Delete flight</button>
+        </div>
+    </div>
+</div>
 
 <div id="guide-overlay"></div>
 <div id="guide-tooltip">

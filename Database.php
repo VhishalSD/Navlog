@@ -261,6 +261,178 @@ class Database
     }
 
     /* =================================================
+       GET LEG BY ID
+       Gets one leg and its checkpoint data.
+       This is used when the user wants to edit a leg.
+    ================================================= */
+
+    public function getLegById(int $legId): ?array
+    {
+        $sql = 'SELECT
+                    leg.*,
+                    checkpoint.location AS checkpoint_location,
+                    checkpoint.radio_freq AS checkpoint_frequency
+                FROM leg
+                INNER JOIN checkpoint
+                    ON leg.Checkpoint_idCheckpoint = checkpoint.idCheckpoint
+                WHERE leg.idLeg = :leg_id
+                LIMIT 1';
+
+        $statement = $this->connect()->prepare($sql);
+        $statement->execute([
+            'leg_id' => $legId
+        ]);
+
+        $leg = $statement->fetch();
+
+        return $leg ?: null;
+    }
+
+    /* =================================================
+       UPDATE LEG
+       Updates one existing leg and its checkpoint data.
+       A transaction is used so both tables stay in sync.
+    ================================================= */
+
+    public function updateLeg(
+        int $legId,
+        string $checkpointLocation,
+        ?int $checkpointFrequency,
+        int $timeAcc,
+        int $timeInt,
+        ?string $eto,
+        ?string $reto,
+        ?string $ato,
+        int $mef,
+        int $cruise,
+        int $mh,
+        int $variation,
+        int $th,
+        int $wca,
+        int $windDirection,
+        int $windVelocity,
+        int $trueTrack,
+        int $distanceInterval,
+        int $distanceAcc,
+        int $groundSpeed
+    ): bool {
+        $connection = $this->connect();
+        $connection->beginTransaction();
+
+        try {
+            $leg = $this->getLegById($legId);
+
+            if ($leg === null) {
+                $connection->rollBack();
+                return false;
+            }
+
+            $checkpointSql = 'UPDATE checkpoint
+                              SET
+                                  location = :location,
+                                  radio_freq = :radio_freq
+                              WHERE idCheckpoint = :checkpoint_id';
+
+            $checkpointStatement = $connection->prepare($checkpointSql);
+            $checkpointStatement->execute([
+                'location' => $checkpointLocation,
+                'radio_freq' => $checkpointFrequency,
+                'checkpoint_id' => (int)$leg['Checkpoint_idCheckpoint']
+            ]);
+
+            $legSql = 'UPDATE leg
+                       SET
+                           time_acc = :time_acc,
+                           time_int = :time_int,
+                           ETO = :eto,
+                           RETO = :reto,
+                           ATO = :ato,
+                           MEF = :mef,
+                           cruise = :cruise,
+                           MH = :mh,
+                           var = :variation,
+                           TH = :th,
+                           WCA = :wca,
+                           wind_dir = :wind_dir,
+                           wind_v = :wind_v,
+                           tt = :tt,
+                           dist_int = :dist_int,
+                           dist_acc = :dist_acc,
+                           gs = :gs
+                       WHERE idLeg = :leg_id';
+
+            $legStatement = $connection->prepare($legSql);
+            $legStatement->execute([
+                'time_acc' => $timeAcc,
+                'time_int' => $timeInt,
+                'eto' => $this->emptyTimeToNull($eto),
+                'reto' => $this->emptyTimeToNull($reto),
+                'ato' => $this->emptyTimeToNull($ato),
+                'mef' => $mef,
+                'cruise' => $cruise,
+                'mh' => $mh,
+                'variation' => $variation,
+                'th' => $th,
+                'wca' => $wca,
+                'wind_dir' => $windDirection,
+                'wind_v' => $windVelocity,
+                'tt' => $trueTrack,
+                'dist_int' => $distanceInterval,
+                'dist_acc' => $distanceAcc,
+                'gs' => $groundSpeed,
+                'leg_id' => $legId
+            ]);
+
+            $connection->commit();
+            return true;
+        } catch (Throwable $exception) {
+            $connection->rollBack();
+            throw $exception;
+        }
+    }
+
+    /* =================================================
+       DELETE LEG BY ID
+       Removes one leg from the database.
+       The connected checkpoint is removed afterwards.
+    ================================================= */
+
+    public function deleteLegById(int $legId): bool
+    {
+        $connection = $this->connect();
+        $connection->beginTransaction();
+
+        try {
+            $leg = $this->getLegById($legId);
+
+            if ($leg === null) {
+                $connection->rollBack();
+                return false;
+            }
+
+            $checkpointId = (int)$leg['Checkpoint_idCheckpoint'];
+
+            $legSql = 'DELETE FROM leg WHERE idLeg = :leg_id';
+            $legStatement = $connection->prepare($legSql);
+            $legStatement->execute([
+                'leg_id' => $legId
+            ]);
+
+            $checkpointSql = 'DELETE FROM checkpoint WHERE idCheckpoint = :checkpoint_id';
+            $checkpointStatement = $connection->prepare($checkpointSql);
+            $checkpointStatement->execute([
+                'checkpoint_id' => $checkpointId
+            ]);
+
+            $connection->commit();
+            return true;
+        } catch (Throwable $exception) {
+            $connection->rollBack();
+            throw $exception;
+        }
+    }
+
+    /* =================================================
        DELETE LEGS BY FLIGHT ID
        Removes all legs that belong to one flight.
     ================================================= */

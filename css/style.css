@@ -137,19 +137,19 @@ hr {
 ================================================= */
 
 .masthead {
-    width: 200px;
-    padding: 20px 50px 20px 10px;
+    width: 150px;
+    padding: 20px 20px 20px 8px;
     float: left;
 }
 
 .main {
-    width: 80%;
+    width: calc(100% - 150px);
     padding: 20px 20px 80px 20px;
-    margin-left: 200px;
+    margin-left: 150px;
     border-left: 3px solid black;
     min-height: calc(100vh - 60px);
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 620px));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     align-items: start;
 }
@@ -186,9 +186,9 @@ hr {
 ================================================= */
 
 .masthead .menu {
-    margin-right: 20px;
+    margin-right: 8px;
     direction: rtl;
-    width: 180px;
+    width: 135px;
 }
 
 .masthead .menu a {
@@ -214,7 +214,19 @@ hr {
     color: #721c24;
     padding: 10px;
     border: 1px solid #f5c6cb;
-    width: 1250px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+}
+
+.form-error-message ul {
+    margin: 8px 0 0 18px;
+    padding: 0;
+}
+
+.form-error-message li {
+    max-width: 100%;
 }
 
 .panel-inline-info {
@@ -456,7 +468,9 @@ table {
     grid-column: 1 / -1;
     margin-top: 25px;
     border-spacing: 0;
-    width: 1250px;
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
     border: 2px solid;
 }
 
@@ -490,10 +504,10 @@ table > tbody > tr > td {
 #table1 select {
     border: 0;
     margin: 0 auto;
-    width: 107px;
+    width: 100%;
     height: 40px;
     background-color: #dce6f1;
-    font-size: medium;
+    font-size: 14px;
 }
 
 #table2 input,
@@ -502,16 +516,26 @@ table > tbody > tr > td {
 #table3 select {
     border: 0;
     margin: 0 auto;
-    width: 55px;
+    width: 100%;
     height: 40px;
     background-color: #dce6f1;
-    font-size: medium;
+    font-size: 14px;
 }
+
+#table1 td,
+#table2 td,
+#table2 th,
+#table3 td,
+#table3 th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 
 #table2 tbody tr th,
 #table3 tbody tr th {
     background-color: #4f81bd;
-    font-size: x-large;
+    font-size: 22px;
     padding-bottom: 10px;
     padding-top: 10px;
     border-right: 1px black solid;
@@ -810,9 +834,11 @@ footer {
 .navlog-input {
     border: 0;
     margin: 0 auto;
-    width: 55px;
+    width: 100%;
     height: 40px;
-    font-size: medium;
+    font-size: 14px;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 .cell-blue-light {
@@ -832,15 +858,15 @@ footer {
 }
 
 .alternate-label-input {
-    width: 139px;
+    width: 100%;
 }
 
 .alternate-select {
-    width: 139px;
+    width: 100%;
 }
 
 .alternate-radio-input {
-    width: 102px;
+    width: 100%;
 }
 
 .table-full-input {
@@ -855,17 +881,25 @@ footer {
 ================================================= */
 
 #table3 .alternate-label-input {
-    width: 139px !important;
+    width: 100% !important;
+    font-size: 13px !important;
+    text-align: center;
 }
 
 #table3 .alternate-select {
-    width: 139px !important;
+    width: 100% !important;
     background-color: #b8cce4 !important;
+    font-size: 12px !important;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 #table3 .alternate-radio-input {
-    width: 102px !important;
+    width: 100% !important;
     background-color: #b8cce4 !important;
+    font-size: 12px !important;
+    padding-left: 2px;
+    padding-right: 2px;
 }
 
 #table3 .table-full-input {
@@ -1088,4 +1122,179 @@ body.light-mode footer a {
 
 .manage-flight-action-row button:active {
     transform: translateY(1px);
+}
+
+/* =================================================
+   ADD FLIGHT COLLAPSIBLE WIDTH FIX
+================================================= */
+
+#add-flight-panel .add-flight-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 14px;
+    box-sizing: border-box;
+}
+
+#add-flight-panel .add-flight-field input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#add-flight-panel .add-flight-button {
+    margin-left: 14px;
+    margin-bottom: 14px;
+}
+
+/* =================================================
+   DELETE FLIGHT MODAL
+================================================= */
+
+.delete-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(15, 23, 42, 0.55);
+}
+
+.delete-modal-box {
+    width: 360px;
+    max-width: calc(100% - 40px);
+    background-color: #dce6f1;
+    border: 2px solid #4f81bd;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    padding: 18px;
+    color: #111827;
+}
+
+.delete-modal-box h2 {
+    margin: 0 0 8px 0;
+    color: #111827;
+    font-size: 22px;
+    text-align: left;
+}
+
+.delete-modal-box p {
+    margin: 0 0 18px 0;
+    color: #111827;
+    line-height: 1.4;
+}
+
+.delete-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-cancel-button,
+.modal-delete-button {
+    width: auto;
+    min-width: 100px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.modal-cancel-button {
+    background-color: #9AA6B2;
+    color: midnightblue;
+    border-color: #334155;
+}
+
+.modal-delete-button {
+    background-color: #f3b6b6;
+    color: #5f0000;
+    border-color: #8b0000;
+}
+
+.modal-cancel-button:hover {
+    background-color: #b0b9c4;
+}
+
+.modal-delete-button:hover {
+    background-color: #e89a9a;
+}
+
+/* =================================================
+   LEG CRUD ACTIONS
+   Compact Edit/Delete controls inside the NAVLOG table.
+================================================= */
+
+.leg-row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin-top: 2px;
+    padding: 0 2px 2px 2px;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.leg-row-actions a,
+.leg-row-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 28px;
+    height: 16px;
+    margin: 0;
+    padding: 1px 4px;
+    border: 1px solid #334155;
+    border-radius: 3px;
+    background-color: #dce6f1;
+    color: #000066;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.leg-row-actions form {
+    display: inline-flex;
+    margin: 0;
+    padding: 0;
+}
+
+.leg-row-actions button {
+    background-color: #f3b6b6;
+    color: #5f0000;
+    border-color: #8b0000;
+}
+
+.leg-row-actions a:hover {
+    background-color: #b8cce4;
+}
+
+.leg-row-actions button:hover {
+    background-color: #e89a9a;
+}
+
+.add-leg-cancel-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+    height: 34px;
+    margin-left: 10px;
+    padding: 0 12px;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    background-color: #dce6f1;
+    color: #000066;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.add-leg-cancel-link:hover {
+    background-color: #b8cce4;
 }
