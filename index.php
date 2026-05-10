@@ -653,7 +653,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     <link rel="stylesheet" href="css/style.css">
     <script src="js/script.js" defer></script>
 
-    <title>Vlieggids Navlog</title>
+    <title>NAVLOG</title>
 
 
 
@@ -665,9 +665,9 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
     <nav class="menu">
         <ul>
-            <li><a href="#load-flight-panel">Open..</a></li>
-            <li><a href="#add-flight-panel">Opslaan als..</a></li>
-            <li><a href="#add-leg-panel">Nieuwe leg</a></li>
+            <li><a href="#load-flight-panel">Load flight</a></li>
+            <li><a href="#add-flight-panel">Add flight</a></li>
+            <li><a href="#add-leg-panel">New leg</a></li>
             <li><a href="#fuel-calculation-panel">Fuel calculation</a></li>
             <li><a href="#weather-panel">METAR</a></li>
             <li><a href="#taf-panel">TAF</a></li>
@@ -678,7 +678,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
 <article class="main">
     <header class="title">
-        <h1>Navigatielog</h1>
+        <h1>Navigation log</h1>
     </header>
 
     <?php if ($errorMessage !== '' && str_starts_with($errorMessage, 'Database connection failed:')): ?>
@@ -843,7 +843,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
                     <div class="add-flight-field">
                         <label>Registration</label>
                         <select name="registration" id="manage_aircraft_registration" class="aircraftSelect manage-aircraft-select">
-                            <option value="">Kies toestel</option>
+                            <option value="">Select aircraft</option>
                             <?php foreach (['PH-HLR', 'PH-NSC', 'PH-SPZ', 'PH-SVT', 'PH-SVU', 'PH-XYZ', 'PH-SVP', 'PH-VSY', 'PH-SVN'] as $registrationOption): ?>
                                 <option value="<?= e($registrationOption) ?>" <?= oldValue('registration', (string)($selectedFlight['registration'] ?? '')) === $registrationOption ? 'selected' : '' ?>><?= e($registrationOption) ?></option>
                             <?php endforeach; ?>
@@ -907,7 +907,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <input type="hidden" name="action" value="get_wind_data">
         <strong>KNMI wind data</strong>
         <label for="icao_code" class="panel-label-spaced">ICAO</label>
-        <input id="icao_code" type="text" name="icao_code" value="<?= e($weatherIcaoCode) ?>" placeholder="EHRD" maxlength="4" required data-step="1" data-text="Vul hier een ICAO-code in voor METAR winddata, bijvoorbeeld EHRD.">
+        <input id="icao_code" type="text" name="icao_code" value="<?= e($weatherIcaoCode) ?>" placeholder="EHRD" maxlength="4" required data-step="1" data-text="Enter an ICAO code for METAR wind data, for example EHRD.">
         <button type="submit" class="weather-button">Get wind data</button>
 
         <?php if ($windData !== null): ?>
@@ -945,17 +945,17 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <div class="add-flight-grid">
                 <div class="add-flight-field">
                     <label>Date</label>
-                    <input type="date" name="date" value="<?= oldValue('date') ?>" required data-step="2" data-text="Vul hier de datum van de flight in.">
+                    <input type="date" name="date" value="<?= oldValue('date') ?>" required data-step="2" data-text="Enter the date of the flight.">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Departure</label>
-                    <input type="text" name="departure" value="<?= oldValue('departure') ?>" placeholder="EHRD" required data-step="3" data-text="Vul hier de departure ICAO-code in, bijvoorbeeld EHRD.">
+                    <input type="text" name="departure" value="<?= oldValue('departure') ?>" placeholder="EHRD" required data-step="3" data-text="Enter the departure ICAO code, for example EHRD.">
                 </div>
 
                 <div class="add-flight-field">
                     <label>Destination</label>
-                    <input type="text" name="destination" value="<?= oldValue('destination') ?>" placeholder="EHAM" required data-step="4" data-text="Vul hier de destination ICAO-code in, bijvoorbeeld EHAM.">
+                    <input type="text" name="destination" value="<?= oldValue('destination') ?>" placeholder="EHAM" required data-step="4" data-text="Enter the destination ICAO code, for example EHAM.">
                 </div>
 
                 <div class="add-flight-field">
@@ -980,7 +980,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
                 <div class="add-flight-field">
                     <label>TAS</label>
-                    <input type="number" name="tas" value="<?= oldValue('tas') ?>" required data-step="5" data-text="Vul hier de true airspeed in. Dit moet een positief getal zijn.">
+                    <input type="number" name="tas" value="<?= oldValue('tas') ?>" required data-step="5" data-text="Enter the true airspeed. This must be a positive number.">
                 </div>
             </div>
 
@@ -1000,7 +1000,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <div class="fuel-grid">
             <div class="fuel-field">
                 <label>Fuel on board</label>
-                <input id="fuel_on_board" type="number" value="" min="0" step="0.1" data-step="6" data-text="Vul hier de hoeveelheid fuel on board in.">
+                <input id="fuel_on_board" type="number" value="" min="0" step="0.1" data-step="6" data-text="Enter the amount of fuel on board.">
             </div>
 
             <div class="fuel-field">
@@ -1010,7 +1010,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
             <div class="fuel-field">
                 <label>Trip fuel</label>
-                <input id="trip_fuel" type="number" value="" min="0" step="0.1" data-step="7" data-text="Vul hier de trip fuel in voor de vlucht.">
+                <input id="trip_fuel" type="number" value="" min="0" step="0.1" data-step="7" data-text="Enter the trip fuel for the flight.">
             </div>
 
             <div class="fuel-field">
@@ -1042,7 +1042,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         <input type="hidden" name="action" value="get_taf_data">
         <strong>TAF forecast</strong>
         <label for="taf_icao_code" class="panel-label-spaced">ICAO</label>
-        <input id="taf_icao_code" type="text" name="taf_icao_code" value="<?= e($tafIcaoCode) ?>" placeholder="EHAM" maxlength="4" required data-step="8" data-text="Vul hier een ICAO-code in voor de TAF forecast, bijvoorbeeld EHAM.">
+        <input id="taf_icao_code" type="text" name="taf_icao_code" value="<?= e($tafIcaoCode) ?>" placeholder="EHAM" maxlength="4" required data-step="8" data-text="Enter an ICAO code for the TAF forecast, for example EHAM.">
         <button type="submit" class="weather-button">Get TAF</button>
 
         <?php if ($tafData !== null): ?>
@@ -1083,12 +1083,12 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
                 <div class="add-leg-grid">
                     <div class="add-leg-field">
                         <label>Checkpoint</label>
-                        <input type="text" name="checkpoint_location" value="<?= oldValue('checkpoint_location', (string)($editLeg['checkpoint_location'] ?? '')) ?>" required data-step="9" data-text="Vul hier de checkpointnaam of locatie in. Dit veld is verplicht.">
+                        <input type="text" name="checkpoint_location" value="<?= oldValue('checkpoint_location', (string)($editLeg['checkpoint_location'] ?? '')) ?>" required data-step="9" data-text="Enter the checkpoint name or location. This field is required.">
                     </div>
 
                     <div class="add-leg-field">
                         <label>Frequency</label>
-                        <input type="number" name="checkpoint_frequency" value="<?= oldValue('checkpoint_frequency', (string)($editLeg['checkpoint_frequency'] ?? '')) ?>" data-step="10" data-text="Vul hier optioneel de radiofrequentie van het checkpoint in.">
+                        <input type="number" name="checkpoint_frequency" value="<?= oldValue('checkpoint_frequency', (string)($editLeg['checkpoint_frequency'] ?? '')) ?>" data-step="10" data-text="Optionally enter the radio frequency for this checkpoint.">
                     </div>
 
                     <div class="add-leg-field">
@@ -1098,7 +1098,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
                     <div class="add-leg-field">
                         <label>Time Int</label>
-                        <input type="number" name="time_int" value="<?= oldValue('time_int', (string)($editLeg['time_int'] ?? '')) ?>" data-step="11" data-text="Vul hier de time interval van deze leg in minuten in.">
+                        <input type="number" name="time_int" value="<?= oldValue('time_int', (string)($editLeg['time_int'] ?? '')) ?>" data-step="11" data-text="Enter the time interval of this leg in minutes.">
                     </div>
 
                     <div class="add-leg-field">
@@ -1113,7 +1113,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
                     <div class="add-leg-field">
                         <label>MH</label>
-                        <input type="number" name="mh" value="<?= oldValue('mh', (string)($editLeg['MH'] ?? '')) ?>" data-step="12" data-text="Vul hier de magnetic heading in. Dit moet tussen 0 en 360 liggen.">
+                        <input type="number" name="mh" value="<?= oldValue('mh', (string)($editLeg['MH'] ?? '')) ?>" data-step="12" data-text="Enter the magnetic heading. This must be between 0 and 360.">
                     </div>
 
                     <div class="add-leg-field">
@@ -1245,23 +1245,23 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <td>Int.</td>
             <td>
                 <span class="tooltip">ETO
-                    <span class="tooltiptext">Estimated Time Overhead, wat de geschatte tijd is waarop een vliegtuig zich boven een bepaald punt bevindt</span>
+                    <span class="tooltiptext">Estimated Time Overhead: the estimated time when the aircraft is overhead a checkpoint.</span>
                 </span>
             </td>
             <td>
                 <span class="tooltip">RETO
-                    <span class="tooltiptext">Revised Estimated Time Overhead, de herziene geschatte tijd boven een punt, wordt gebruikt wanneer de originele ETO afwijkt</span>
+                    <span class="tooltiptext">Revised Estimated Time Overhead: the updated estimated overhead time when the original ETO changes.</span>
                 </span>
             </td>
             <td>
                 <span class="tooltip">ATO
-                    <span class="tooltiptext">Actual Time Overhead, de werkelijke tijd waarop het vliegtuig zich boven een bepaald punt bevindt</span>
+                    <span class="tooltiptext">Actual Time Overhead: the actual time when the aircraft is overhead a checkpoint.</span>
                 </span>
             </td>
             <td>MEF</td>
             <td>Cruise</td>
             <td>__Checkpoint__</td>
-            <td>Frequentie</td>
+            <td>Frequency</td>
             <td>MH</td>
             <td>var.</td>
             <td>TH</td>
@@ -1284,7 +1284,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         ?>
             <tr>
                 <td>
-                    <input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= $rowNumber ?> &darr;" onclick="PutThroughLegInfo(<?= $rowNumber ?>)"/>
+                    <input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= $rowNumber ?> &darr;" readonly/>
                     <?php if ($databaseLeg !== null): ?>
                         <div class="leg-row-actions">
                             <a href="index.php?flight_id=<?= (int)$selectedFlight['idFlight'] ?>&edit_leg_id=<?= (int)$databaseLeg['idLeg'] ?>#add-leg-panel">Edit</a>
@@ -1352,7 +1352,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <td><input class="cell-blue-dark" type="text"/></td>
             <td>
                 <select id="airportSelect" class="alternate-select cell-blue-dark">
-                    <option value="">Kies alternate</option>
+                    <option value="">Select alternate</option>
                 </select>
             </td>
             <td><input id="radioInput" class="alternate-radio-input cell-blue-dark" readonly /></td>
@@ -1370,13 +1370,11 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
     </table>
 
 
-    <iframe class="hidden-route-frame" id="1_60" src="../1_60/index.php" width="1250" height="900" frameborder="0"
-            scrolling="no"></iframe>
 
     <footer>
         <a href="#" onclick="toggleAchtergrond(event)">Light/Dark Mode</a> |
         <a href="#" onclick="printPagina(); return false;">Print</a> |
-        <a href="#" onclick="startGuide()">Stappenplan</a>
+        <a href="#" onclick="startGuide(); return false;">Step guide</a>
     </footer>
 </article>
 
@@ -1414,13 +1412,13 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 <div id="guide-tooltip">
     <div id="guide-text"></div>
     <div id="guide-controls">
-        <a href="#" onclick="prevStep(event)" title="Vorige stap">
+        <a href="#" onclick="prevStep(event)" title="Previous step">
             <i class="fas fa-arrow-left"></i>
         </a>
-        <a href="#" onclick="nextStep(event)" title="Volgende stap">
+        <a href="#" onclick="nextStep(event)" title="Next step">
             <i class="fas fa-arrow-right"></i>
         </a>
-        <a href="#" onclick="endGuide(event)" title="Sluiten">
+        <a href="#" onclick="endGuide(event)" title="Close">
             <i class="fas fa-xmark"></i>
         </a>
     </div>
