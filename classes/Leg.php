@@ -67,7 +67,7 @@ class Leg
         $this->trueTrack = $trueTrack;
         $this->distanceInterval = $distanceInterval;
         $this->distanceAcc = $distanceAcc;
-        $this->tas = $tas;
+        $this->tas = max(1, $tas);
     }
 
     /* =================================================
@@ -81,13 +81,13 @@ class Leg
             $legNumber,
             (int)($row['time_acc'] ?? 0),
             (int)($row['time_int'] ?? 0),
-            $row['ETO'] ?? null,
-            $row['RETO'] ?? null,
-            $row['ATO'] ?? null,
+            self::nullableString($row['ETO'] ?? null),
+            self::nullableString($row['RETO'] ?? null),
+            self::nullableString($row['ATO'] ?? null),
             (int)($row['MEF'] ?? 0),
             (int)($row['cruise'] ?? 0),
-            (string)($row['checkpoint_location'] ?? ''),
-            isset($row['checkpoint_frequency']) ? (int)$row['checkpoint_frequency'] : null,
+            trim((string)($row['checkpoint_location'] ?? '')),
+            self::nullableInt($row['checkpoint_frequency'] ?? null),
             (int)($row['var'] ?? 0),
             (int)($row['wind_dir'] ?? 0),
             (int)($row['wind_v'] ?? 0),
@@ -96,6 +96,26 @@ class Leg
             (int)($row['dist_acc'] ?? 0),
             $tas
         );
+    }
+
+    private static function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim((string)$value);
+
+        return $value === '' ? null : $value;
+    }
+
+    private static function nullableInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int)$value;
     }
 
     public function getLegNumber(): int
@@ -190,10 +210,6 @@ class Leg
 
     public function calculateHeadingWca(): int
     {
-        if ($this->tas <= 0) {
-            return 0;
-        }
-
         $angleDegrees = $this->trueTrack - ($this->windDirection - 180);
         $angleRadians = deg2rad($angleDegrees);
         $ratio = ($this->windVelocity * sin($angleRadians)) / $this->tas;
@@ -258,6 +274,11 @@ class Leg
 
     public function toArray(): array
     {
+        $wca = $this->calculateHeadingWca();
+        $trueHeading = $this->normalizeDegrees($this->trueTrack + $wca);
+        $magneticHeading = $this->normalizeDegrees($trueHeading - $this->headingVar);
+        $groundSpeed = $this->calculateGroundSpeed();
+
         return [
             'leg_number' => $this->legNumber,
             'time_acc' => $this->timeAcc,
@@ -269,16 +290,17 @@ class Leg
             'cruise' => $this->cruise,
             'checkpoint_location' => $this->checkpoint,
             'checkpoint_frequency' => $this->frequency,
-            'MH' => $this->calculateHeadingMh(),
+            'MH' => $magneticHeading,
             'var' => $this->headingVar,
-            'TH' => $this->calculateHeadingTh(),
-            'WCA' => $this->calculateHeadingWca(),
+            'TH' => $trueHeading,
+            'WCA' => $wca,
             'wind_dir' => $this->windDirection,
             'wind_v' => $this->windVelocity,
             'tt' => $this->trueTrack,
             'dist_int' => $this->distanceInterval,
             'dist_acc' => $this->distanceAcc,
-            'gs' => $this->calculateGroundSpeed()
+            'tas' => $this->tas,
+            'gs' => $groundSpeed
         ];
     }
 }

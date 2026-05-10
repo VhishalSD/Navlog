@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /* =================================================
    WEATHER SCRAPER CLASS
    This class gets aviation weather information from
@@ -25,7 +27,7 @@ class WeatherScraper
     {
         $icaoCode = strtoupper(trim($icaoCode));
 
-        if ($icaoCode === '') {
+        if (!$this->isValidIcaoCode($icaoCode)) {
             return null;
         }
 
@@ -54,7 +56,7 @@ class WeatherScraper
     {
         $icaoCode = strtoupper(trim($icaoCode));
 
-        if ($icaoCode === '') {
+        if (!$this->isValidIcaoCode($icaoCode)) {
             return null;
         }
 
@@ -74,6 +76,17 @@ class WeatherScraper
             'icao' => $icaoCode,
             'taf' => $tafLine
         ];
+    }
+
+    /* =================================================
+       VALIDATE ICAO CODE
+       Checks if the ICAO code contains exactly four
+       letters, for example EHRD or EHAM.
+    ================================================= */
+
+    private function isValidIcaoCode(string $icaoCode): bool
+    {
+        return preg_match('/^[A-Z]{4}$/', $icaoCode) === 1;
     }
 
     /* =================================================
@@ -108,13 +121,15 @@ class WeatherScraper
 
     private function findMetarLine(string $content, string $icaoCode): ?string
     {
-        $content = preg_replace('/\s+/', ' ', $content);
+        $content = preg_replace('/\s+/', ' ', $content) ?? '';
 
-        if (!preg_match('/(' . preg_quote($icaoCode, '/') . '\s+[^=]+)=?/i', $content, $matches)) {
+        $pattern = '/\b(METAR\s+)?' . preg_quote($icaoCode, '/') . '\s+[^=]*?\b(\d{3}|VRB)\d{2,3}KT\b[^=]*=?/i';
+
+        if (!preg_match($pattern, $content, $matches)) {
             return null;
         }
 
-        return trim($matches[1]);
+        return trim($matches[0]);
     }
 
     /* =================================================
@@ -126,15 +141,15 @@ class WeatherScraper
 
     private function findTafLine(string $content, string $icaoCode): ?string
     {
-        $content = preg_replace('/\s+/', ' ', $content);
+        $content = preg_replace('/\s+/', ' ', $content) ?? '';
 
-        $pattern = '/(TAF\s+' . preg_quote($icaoCode, '/') . '\s+.*?=)/i';
+        $pattern = '/\b(TAF\s+' . preg_quote($icaoCode, '/') . '\s+.*?=)/i';
 
         if (preg_match($pattern, $content, $matches)) {
             return trim($matches[1]);
         }
 
-        $fallbackPattern = '/(' . preg_quote($icaoCode, '/') . '\s+\d{6}Z\s+\d{4}\/\d{4}\s+.*?)(?=\s+[A-Z]{4}\s+\d{6}Z\s+|$)/i';
+        $fallbackPattern = '/\b(' . preg_quote($icaoCode, '/') . '\s+\d{6}Z\s+\d{4}\/\d{4}\s+.*?)(?=\s+(TAF\s+)?[A-Z]{4}\s+\d{6}Z\s+|$)/i';
 
         if (preg_match($fallbackPattern, $content, $matches)) {
             return trim($matches[1]);
