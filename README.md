@@ -53,31 +53,95 @@ Navlog-School/
 
 ## Installatie
 
-1. Start XAMPP.
-2. Start Apache en MySQL.
-3. Plaats de projectmap in:
+Volg deze stappen om het project lokaal te installeren en te starten.
+
+### 1. Projectmap plaatsen
+
+Plaats de projectmap in de `htdocs` map van XAMPP:
 
 ```text
 /Applications/XAMPP/xamppfiles/htdocs/Navlog-School
 ```
 
-4. Importeer het databasebestand in MySQL Workbench:
+### 2. XAMPP starten
+
+Start XAMPP en zet de volgende services aan:
+
+- Apache
+- MySQL
+
+### 3. Database importeren
+
+Open MySQL Workbench en importeer het databasebestand:
 
 ```text
 database/navlog.sql
 ```
 
-5. Controleer de database-instellingen in:
+Het SQL-bestand maakt zelf de database aan met:
 
-```text
-Database.php
+```sql
+CREATE DATABASE IF NOT EXISTS `navlog_school`;
+USE `navlog_school`;
 ```
 
-6. Open de applicatie in de browser:
+Na het importeren bevat de database twee demo-flights met bijbehorende aircraft data, checkpoints en legs.
+
+### 4. Databaseverbinding controleren
+
+Controleer in `Database.php` of de databasegegevens overeenkomen met je lokale XAMPP-installatie:
+
+```php
+private string $host = 'localhost';
+private string $database = 'navlog_school';
+private string $username = 'root';
+private string $password = '';
+```
+
+Bij een standaard XAMPP-installatie op macOS zijn deze gegevens meestal correct.
+
+### 5. Applicatie openen
+
+Open de applicatie in de browser:
 
 ```text
 http://localhost/Navlog-School/index.php
 ```
+
+## Gebruik
+
+### 1. Flight laden
+
+Gebruik `Load saved flight` om een bestaande flight te selecteren. Na het selecteren worden de flightgegevens, aircraftgegevens en gekoppelde legs geladen.
+
+### 2. Flight beheren
+
+Open `Manage selected flight` om de geselecteerde flight te bewerken. Hier kun je onder andere de datum, departure, destination, elevations, altitudes en TAS aanpassen.
+
+### 3. Aircraft en timing beheren
+
+Open `Manage aircraft and timing data` om aircraft- en timinggegevens op te slaan, zoals pilot, registration, aircraft type, OAT, IAS, tacho, off-blocks, engine off, take-off time en landing time.
+
+### 4. Legs beheren
+
+Open `Add leg to selected flight` om een nieuwe leg toe te voegen. In de NAVLOG-tabel kun je bestaande legs bewerken of verwijderen met de Edit- en Delete-knoppen.
+
+### 5. Weather data gebruiken
+
+Gebruik het METAR/TAF-gedeelte om weerinformatie op te halen met een ICAO-code, bijvoorbeeld:
+
+```text
+EHRD
+EHAM
+```
+
+### 6. Fuel calculation gebruiken
+
+Open `Fuel calculation`, vul de fuelvelden in en klik op `Calculate fuel`. De applicatie toont daarna total required fuel, remaining fuel en de fuel status.
+
+### 7. Printen
+
+Klik op `Print` om een schone printweergave van de NAVLOG-tabellen te openen. Menu's, knoppen en formulieren worden niet meegeprint.
 
 ## Belangrijke bestanden
 
