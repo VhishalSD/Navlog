@@ -1,28 +1,23 @@
 # NAVLOG
 
-**Navigatielog webapplicatie** – PHP, MySQL, PDO & OOP schoolproject  
-MBO 4 Software Developer
+NAVLOG is een PHP/MySQL-webapplicatie voor het beheren van navigatielogs. Met de applicatie kan de gebruiker flights aanmaken en selecteren, legs beheren per geselecteerde flight, de NAVLOG-tabel bekijken, METAR/TAF-weerinformatie ophalen en een fuel calculation uitvoeren.
 
-## Over het project
-
-NAVLOG is een webapplicatie waarmee een navigatielog kan worden beheerd. De gebruiker selecteert of maakt eerst een **flight** aan. Daarna kunnen bij die flight **legs** worden toegevoegd en bekeken in de NAVLOG-tabel.
-
-De applicatie gebruikt **PHP**, **MySQL**, **PDO** en **OOP**. Databasegegevens worden opgehaald via PDO en daarna omgezet naar `Leg` objecten die worden beheerd met `LegArray`.
+Dit project is gebouwd met PHP, MySQL, PDO en OOP.
 
 ## Functionaliteiten
 
-- Flights aanmaken en selecteren.
-- Legs toevoegen per geselecteerde flight.
-- Legs vanuit de database laden en tonen in de NAVLOG-tabel.
-- `Leg` en `LegArray` gebruiken voor OOP-structuur.
-- KNMI METAR winddata ophalen op basis van ICAO-code.
-- TAF forecast ophalen op basis van ICAO-code.
+- Flights aanmaken, selecteren, bewerken en verwijderen.
+- Legs toevoegen, bewerken en verwijderen voor een geselecteerde flight.
+- Opgeslagen legs uit de database laden en tonen in de NAVLOG-tabel.
+- `Leg` en `LegArray` classes gebruiken voor de OOP-structuur.
+- KNMI/METAR winddata ophalen op basis van een ICAO-code.
+- TAF forecastinformatie ophalen op basis van een ICAO-code.
+- Aircraft- en timinggegevens opslaan en tonen voor de geselecteerde flight.
 - Fuel calculation uitvoeren voor de geselecteerde flight.
-- Gescheiden frontend-bestanden: CSS in `css/style.css` en JavaScript in `js/script.js`.
-- Printfunctie voor het NAVLOG-overzicht.
-- Light/Dark Mode voor de interface.
-- Stappenplan dat de gebruiker door de belangrijkste invoervelden leidt.
-- Server-side validatie voor flights, legs, ICAO-codes en numerieke invoer.
+- Het NAVLOG-overzicht printen.
+- Light/Dark Mode gebruiken.
+- Server-side validatie gebruiken voor flights, legs, ICAO-codes en numerieke invoer.
+- Custom confirmation modals gebruiken voor delete-acties.
 
 ## Gebruikte technieken
 
@@ -66,8 +61,18 @@ Navlog-School/
 /Applications/XAMPP/xamppfiles/htdocs/Navlog-School
 ```
 
-4. Importeer de NAVLOG-database in MySQL Workbench.
-5. Controleer de databasegegevens in `Database.php`.
+4. Importeer het databasebestand in MySQL Workbench:
+
+```text
+database/navlog.sql
+```
+
+5. Controleer de database-instellingen in:
+
+```text
+Database.php
+```
+
 6. Open de applicatie in de browser:
 
 ```text
@@ -76,41 +81,37 @@ http://localhost/Navlog-School/index.php
 
 ## Belangrijke bestanden
 
-- `index.php` – verwerkt de acties, toont de NAVLOG-interface en bevat server-side validatie.
-- `Database.php` – bevat de databaseverbinding en queries via PDO.
+- `index.php` – verwerkt acties, validatie en de hoofdinterface van NAVLOG.
+- `Database.php` – bevat de PDO-databaseverbinding en databasequeries.
 - `classes/Leg.php` – class voor één navigatieleg.
 - `classes/LegArray.php` – beheert meerdere `Leg` objecten.
-- `classes/WeatherScraper.php` – haalt METAR en TAF data op.
-- `css/style.css` – styling van de applicatie.
-- `js/script.js` – frontendlogica zoals dropdowns, fuel calculation, print, Light/Dark Mode en stappenplan.
+- `classes/WeatherScraper.php` – haalt METAR- en TAF-data op.
+- `css/style.css` – bevat de styling van de applicatie.
+- `js/script.js` – bevat frontendlogica voor dropdowns, modals, fuel calculation, printen, Light/Dark Mode en invoerhulp.
+- `database/navlog.sql` – database-export om de projectdatabase te importeren.
 
 ## Database
 
-De applicatie gebruikt tabellen voor flights, checkpoints en legs. Een flight kan meerdere legs hebben. De geselecteerde flight bepaalt welke legs in de NAVLOG-tabel worden geladen.
+De applicatie gebruikt databasetabellen voor flights, legs, checkpoints en aircraft data. Een flight kan meerdere legs hebben. De geselecteerde flight bepaalt welke legs en aircraftgegevens in de interface worden geladen.
 
-De database-export hoort in `database/navlog.sql` te staan, zodat het project opnieuw kan worden geïmporteerd in MySQL Workbench.
+De database-export staat in:
 
-## Schoolcriteria
+```text
+database/navlog.sql
+```
 
-| Eis | Status |
-|---|---|
-| Legs vanuit de database tonen in de GUI | Klaar |
-| Leg invullen volgens het NAVLOG-schema | Klaar |
-| Legs opslaan in de database | Klaar |
-| Eerder opgeslagen legs inladen | Klaar |
-| `Leg` en `LegArray` gebruiken | Klaar |
-| KNMI METAR winddata ophalen | Klaar |
-| TAF forecast ophalen | Klaar |
-| Fuel calculation met logica | Klaar |
-| Printfunctie | Klaar |
-| Stappenplan voor invoerhulp | Klaar |
-| Server-side validatie voor invoer | Klaar |
+## Validatie
 
-## Korte uitleg
+De applicatie gebruikt server-side validatie om te voorkomen dat ongeldige data wordt opgeslagen. Validatie wordt gebruikt voor:
 
-Ik heb een PHP/MySQL NAVLOG-applicatie gemaakt waarin flights en legs via de database aan elkaar gekoppeld zijn. De databaseverbinding loopt via PDO. De `Leg` class gebruik ik voor één navigatieleg en de `LegArray` class gebruik ik om meerdere legs als objecten te beheren.
+- Flightgegevens.
+- Aircraft- en timinggegevens.
+- Leggegevens.
+- ICAO-codes.
+- Numerieke velden.
+- Fuel calculation velden.
 
-De interface is zo opgebouwd dat je eerst een flight selecteert of aanmaakt. Daarna kun je legs toevoegen, METAR/TAF-data ophalen, een fuel calculation uitvoeren en het overzicht printen. Ook bevat de applicatie een Light/Dark Mode, een stappenplan voor invoerhulp en server-side validatie om verkeerde invoer te blokkeren.
+Ongeldige velden worden leeggemaakt en geldige velden blijven waar mogelijk ingevuld. Foutmeldingen worden getoond bij het formulier waar de fout is ontstaan.
 
 ## Auteur
 
