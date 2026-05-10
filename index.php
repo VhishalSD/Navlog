@@ -1299,7 +1299,11 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
                 <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['ATO'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['MEF'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['cruise'] ?? '') ?>"/></td>
-                <td><input id="leg<?= $rowNumber ?>Name" class="navlog-input table-full-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['checkpoint_location'] ?? '') ?>"/></td>
+                <td class="checkpoint-cell">
+                    <span class="checkpoint-hover" data-tooltip="<?= e($leg['checkpoint_location'] ?? '') ?>">
+                        <input id="leg<?= $rowNumber ?>Name" class="navlog-input table-full-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['checkpoint_location'] ?? '') ?>" readonly/>
+                    </span>
+                </td>
                 <td><input class="navlog-input table-full-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['checkpoint_frequency'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $pinkCellClass ?>" type="text" value="<?= e($leg['MH'] ?? '') ?>"/></td>
                 <td><input class="navlog-input <?= $blueCellClass ?>" type="text" value="<?= e($leg['var'] ?? '') ?>"/></td>

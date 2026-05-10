@@ -36,7 +36,7 @@ CREATE TABLE `aircraft` (
   `takeoff_time` time DEFAULT NULL,
   `landing_time` time DEFAULT NULL,
   PRIMARY KEY (`idAircraft`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,7 +45,9 @@ CREATE TABLE `aircraft` (
 
 LOCK TABLES `aircraft` WRITE;
 /*!40000 ALTER TABLE `aircraft` DISABLE KEYS */;
-INSERT INTO `aircraft` VALUES (1,'','DR-400','PH-HLR',NULL,NULL,678,689,'10:00:00','11:00:00','11:05:00','13:00:00');
+INSERT INTO `aircraft` VALUES
+(1,'Vishal Tewari','DR-400','PH-HLR',12,95,678,689,'10:00:00','11:00:00','10:10:00','10:55:00'),
+(2,'Demo Pilot','Piper PA28','PH-SVP',10,100,420,431,'12:00:00','13:15:00','12:10:00','13:05:00');
 /*!40000 ALTER TABLE `aircraft` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -61,7 +63,7 @@ CREATE TABLE `checkpoint` (
   `location` varchar(45) DEFAULT NULL,
   `radio_freq` int(11) DEFAULT NULL,
   PRIMARY KEY (`idCheckpoint`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -70,7 +72,13 @@ CREATE TABLE `checkpoint` (
 
 LOCK TABLES `checkpoint` WRITE;
 /*!40000 ALTER TABLE `checkpoint` DISABLE KEYS */;
-INSERT INTO `checkpoint` VALUES (3,'Mike EHRD',118205),(4,'PAM',117800),(5,'MIKE EHLE',135180),(6,'test point',123450),(7,'test eham',118105);
+INSERT INTO `checkpoint` VALUES
+(1,'Gouda',118100),
+(2,'Schiphol CTR',119225),
+(3,'EHAM Final',118275),
+(4,'PAM VOR',117800),
+(5,'Lelystad Approach',123675),
+(6,'EHLE Final',135180);
 /*!40000 ALTER TABLE `checkpoint` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -101,7 +109,9 @@ CREATE TABLE `flight` (
 
 LOCK TABLES `flight` WRITE;
 /*!40000 ALTER TABLE `flight` DISABLE KEYS */;
-INSERT INTO `flight` VALUES (1,'2026-03-17','EHRD','EHLE','-14','70',1500,1500,105),(2,'2026-05-08','EHRD','EHAM','-14','-11',1500,1500,105);
+INSERT INTO `flight` VALUES
+(1,'2026-05-10','EHRD','EHAM','-14','-11',1500,1500,105),
+(2,'2026-05-11','EHRD','EHLE','-14','70',1500,1500,110);
 /*!40000 ALTER TABLE `flight` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -129,7 +139,7 @@ CREATE TABLE `flight_has_aircraft` (
 
 LOCK TABLES `flight_has_aircraft` WRITE;
 /*!40000 ALTER TABLE `flight_has_aircraft` DISABLE KEYS */;
-INSERT INTO `flight_has_aircraft` VALUES (1,1);
+INSERT INTO `flight_has_aircraft` VALUES (1,1),(2,2);
 /*!40000 ALTER TABLE `flight_has_aircraft` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -166,7 +176,7 @@ CREATE TABLE `leg` (
   KEY `fk_Leg_Flight1_idx` (`Flight_idFlight`),
   CONSTRAINT `fk_Leg_Checkpoint1` FOREIGN KEY (`Checkpoint_idCheckpoint`) REFERENCES `checkpoint` (`idCheckpoint`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   CONSTRAINT `fk_Leg_Flight1` FOREIGN KEY (`Flight_idFlight`) REFERENCES `flight` (`idFlight`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -175,7 +185,13 @@ CREATE TABLE `leg` (
 
 LOCK TABLES `leg` WRITE;
 /*!40000 ALTER TABLE `leg` DISABLE KEYS */;
-INSERT INTO `leg` VALUES (1,0,4,NULL,NULL,NULL,800,1000,59,3,62,2,100,6,60,6,32,100,3,1),(2,19,15,NULL,NULL,NULL,500,1500,59,3,62,2,100,6,60,6,32,102,4,1),(3,34,15,NULL,NULL,NULL,500,1000,59,3,62,2,100,6,60,6,32,102,5,1),(4,50,10,NULL,NULL,NULL,600,1200,90,2,92,1,100,8,90,12,44,105,6,1),(5,0,12,NULL,NULL,NULL,700,1500,85,2,87,1,100,8,90,20,20,105,7,2);
+INSERT INTO `leg` VALUES
+(1,0,12,NULL,NULL,NULL,700,1500,265,2,267,-3,350,5,264,18,18,97,1,1),
+(2,12,15,NULL,NULL,NULL,900,1500,310,2,312,4,350,5,316,22,40,102,2,1),
+(3,27,10,NULL,NULL,NULL,500,1500,345,2,347,1,350,5,348,12,52,100,3,1),
+(4,0,14,NULL,NULL,NULL,600,1500,75,2,77,-2,330,8,73,20,20,104,4,2),
+(5,14,16,NULL,NULL,NULL,800,1500,95,2,97,3,330,8,100,24,44,108,5,2),
+(6,30,12,NULL,NULL,NULL,700,1500,115,2,117,2,330,8,119,18,62,106,6,2);
 /*!40000 ALTER TABLE `leg` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -188,4 +204,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-08 16:28:58
+-- Demo database export cleaned for NAVLOG project submission
