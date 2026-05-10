@@ -1388,3 +1388,150 @@ body.light-mode footer a {
 .add-leg-cancel-link:hover {
     background-color: #b8cce4;
 }
+
+/* =================================================
+   PRINT VIEW
+   Shows only the NAVLOG data that is useful on paper.
+================================================= */
+
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .masthead,
+    footer,
+    button,
+    .weather-panel,
+    .add-flight-panel,
+    .add-leg-panel,
+    .manage-flight-panel,
+    #load-flight-panel,
+    #fuel-calculation-panel,
+    .delete-modal-overlay,
+    #guide-overlay,
+    #guide-tooltip,
+    .leg-row-actions,
+    .success-message,
+    .error-message,
+    .form-error-message {
+        display: none !important;
+    }
+
+    .main {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 8mm !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        min-height: auto !important;
+    }
+
+    .main > .title {
+        display: block !important;
+        margin: 0 0 6mm 0 !important;
+        padding: 0 !important;
+    }
+
+    .main .title h1 {
+        margin: 0 !important;
+        color: #000000 !important;
+        font-size: 18px !important;
+        text-align: center !important;
+    }
+
+    #table1,
+    #table2,
+    #table3 {
+        display: table !important;
+        width: 100% !important;
+        margin: 0 0 6mm 0 !important;
+        border: 1px solid #000000 !important;
+        page-break-inside: avoid;
+        table-layout: fixed;
+    }
+
+    #table1 input,
+    #table1 select,
+    #table2 input,
+    #table2 select,
+    #table3 input,
+    #table3 select {
+        background: transparent !important;
+        color: #000000 !important;
+        border: 0 !important;
+        height: 22px !important;
+        min-height: 22px !important;
+        font-size: 9px !important;
+        padding: 0 2px !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+    }
+
+    #table1 td,
+    #table2 td,
+    #table2 th,
+    #table3 td,
+    #table3 th {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
+        font-size: 9px !important;
+        height: 22px !important;
+        padding: 0 !important;
+        vertical-align: middle !important;
+    }
+
+    #table2 tbody tr th,
+    #table3 tbody tr th {
+        background: #e5e7eb !important;
+        color: #000000 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        padding: 3px 0 !important;
+    }
+
+    .navlog-input,
+    .table-full-input,
+    .alternate-label-input,
+    .alternate-radio-input {
+        background: transparent !important;
+        color: #000000 !important;
+        font-size: 9px !important;
+        height: 22px !important;
+    }
+
+    .cell-blue-light,
+    .cell-blue-dark,
+    .cell-pink-light,
+    .cell-pink-dark {
+        background: #ffffff !important;
+    }
+
+    .checkpoint-hover::after,
+    .tooltip .tooltiptext {
+        display: none !important;
+    }
+
+    .tooltip {
+        color: #000000 !important;
+        text-decoration: none !important;
+    }
+
+    @page {
+        size: A4 landscape;
+        margin: 8mm;
+    }
+}
