@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/classes/Leg.php';
 require_once __DIR__ . '/classes/LegArray.php';
@@ -17,12 +18,14 @@ $selectedFlight = null;
 $selectedLegs = [];
 $legArray = new LegArray();
 $editLeg = null;
-$windData = null;
-$weatherIcaoCode = '';
-$weatherMessage = '';
-$tafData = null;
-$tafIcaoCode = '';
-$tafMessage = '';
+$windData = $_SESSION['windData'] ?? null;
+$weatherIcaoCode = $_SESSION['weatherIcaoCode'] ?? '';
+$weatherMessage = $_SESSION['weatherFlashMessage'] ?? '';
+unset($_SESSION['weatherFlashMessage']);
+$tafData = $_SESSION['tafData'] ?? null;
+$tafIcaoCode = $_SESSION['tafIcaoCode'] ?? '';
+$tafMessage = $_SESSION['tafFlashMessage'] ?? '';
+unset($_SESSION['tafFlashMessage']);
 $errorMessage = '';
 $successMessage = '';
 $validationErrors = [];
@@ -34,16 +37,33 @@ try {
         $weatherIcaoCode = $icaoCode;
 
         if ($icaoCode === '') {
+            $windData = null;
             $weatherMessage = 'ICAO code is required.';
         } elseif (!isValidIcaoCode($icaoCode)) {
+            $windData = null;
             $weatherMessage = 'ICAO code must contain exactly 4 letters, for example EHRD.';
         } else {
             $windData = $weatherScraper->getWindData($icaoCode);
+            $weatherMessage = '';
 
             if ($windData === null) {
                 $weatherMessage = 'No KNMI wind data found for ' . $icaoCode . '.';
             }
         }
+
+        $_SESSION['windData'] = $windData;
+        $_SESSION['weatherIcaoCode'] = $weatherIcaoCode;
+
+        if ($weatherMessage !== '') {
+            $_SESSION['weatherFlashMessage'] = $weatherMessage;
+        } else {
+            unset($_SESSION['weatherFlashMessage']);
+        }
+
+        $redirectFlightId = filter_input(INPUT_GET, 'flight_id', FILTER_VALIDATE_INT);
+        $redirectUrl = 'index.php' . ($redirectFlightId ? '?flight_id=' . (int)$redirectFlightId : '') . '#weather-panel';
+        header('Location: ' . $redirectUrl);
+        exit;
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'get_taf_data') {
@@ -51,16 +71,33 @@ try {
         $tafIcaoCode = $icaoCode;
 
         if ($icaoCode === '') {
+            $tafData = null;
             $tafMessage = 'ICAO code is required.';
         } elseif (!isValidIcaoCode($icaoCode)) {
+            $tafData = null;
             $tafMessage = 'ICAO code must contain exactly 4 letters, for example EHAM.';
         } else {
             $tafData = $weatherScraper->getTafData($icaoCode);
+            $tafMessage = '';
 
             if ($tafData === null) {
                 $tafMessage = 'No TAF data found for ' . $icaoCode . '.';
             }
         }
+
+        $_SESSION['tafData'] = $tafData;
+        $_SESSION['tafIcaoCode'] = $tafIcaoCode;
+
+        if ($tafMessage !== '') {
+            $_SESSION['tafFlashMessage'] = $tafMessage;
+        } else {
+            unset($_SESSION['tafFlashMessage']);
+        }
+
+        $redirectFlightId = filter_input(INPUT_GET, 'flight_id', FILTER_VALIDATE_INT);
+        $redirectUrl = 'index.php' . ($redirectFlightId ? '?flight_id=' . (int)$redirectFlightId : '') . '#taf-panel';
+        header('Location: ' . $redirectUrl);
+        exit;
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_flight') {
@@ -866,7 +903,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
 
         </details>
     <?php endif; ?>
-    <form id="weather-panel" method="post" class="weather-panel" novalidate>
+    <form id="weather-panel" method="post" action="index.php<?= $selectedFlight ? '?flight_id=' . (int)$selectedFlight['idFlight'] : '' ?>#weather-panel" class="weather-panel" novalidate>
         <input type="hidden" name="action" value="get_wind_data">
         <strong>KNMI wind data</strong>
         <label for="icao_code" class="panel-label-spaced">ICAO</label>
@@ -1001,7 +1038,7 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         </div>
     </details>
 
-    <form id="taf-panel" method="post" class="weather-panel" novalidate>
+    <form id="taf-panel" method="post" action="index.php<?= $selectedFlight ? '?flight_id=' . (int)$selectedFlight['idFlight'] : '' ?>#taf-panel" class="weather-panel" novalidate>
         <input type="hidden" name="action" value="get_taf_data">
         <strong>TAF forecast</strong>
         <label for="taf_icao_code" class="panel-label-spaced">ICAO</label>
