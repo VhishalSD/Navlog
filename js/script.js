@@ -145,36 +145,67 @@ const aircrafts = [
 
 document.addEventListener('DOMContentLoaded', function () {
     const aircraftSelects = document.querySelectorAll('.aircraftSelect');
-    const typeInputs = document.querySelectorAll('.typeInput');
 
-    aircraftSelects.forEach((select, index) => {
-        // Fill the dropdown with aircraft data.
-        aircrafts.forEach(aircraft => {
-            const option = document.createElement('option');
-            option.value = aircraft.type;
-            option.textContent = aircraft.callsign;
-            option.dataset.label = aircraft.callsign;
-            option.dataset.type = aircraft.type;
-            select.appendChild(option);
-        });
+    aircraftSelects.forEach(select => {
+        const selectedRegistration = select.value || select.options[select.selectedIndex]?.textContent || '';
+        const hasRealOptions = Array.from(select.options).some(option => option.value && option.value !== '');
 
-        // Set the first value immediately.
-        if (typeInputs[index]) {
-            typeInputs[index].value = select.options[0].dataset.type;
+        // Only fill empty dropdowns. Server-rendered dropdowns keep their saved values.
+        if (!hasRealOptions && !select.disabled) {
+            aircrafts.forEach(aircraft => {
+                const option = document.createElement('option');
+                option.value = aircraft.callsign;
+                option.textContent = aircraft.callsign;
+                option.dataset.label = aircraft.callsign;
+                option.dataset.type = aircraft.type;
+                select.appendChild(option);
+            });
         }
 
-        // Handle selection changes.
-        select.addEventListener('change', function () {
-            Array.from(this.options).forEach(option => {
-                option.textContent = option.dataset.label;
-            });
+        // Make sure every option has a usable aircraft type.
+        Array.from(select.options).forEach(option => {
+            const aircraft = aircrafts.find(item => item.callsign === option.value || item.callsign === option.textContent);
 
-            const selected = this.options[this.selectedIndex];
-
-            if (typeInputs[index]) {
-                typeInputs[index].value = selected.dataset.type;
+            if (aircraft) {
+                option.dataset.type = aircraft.type;
+                option.dataset.label = aircraft.callsign;
+                option.value = aircraft.callsign;
+                option.textContent = aircraft.callsign;
             }
         });
+
+        if (selectedRegistration) {
+            select.value = selectedRegistration;
+        }
+
+        const form = select.closest('form');
+        const table = select.closest('table');
+        const typeInput = form
+            ? form.querySelector('.typeInput')
+            : table
+                ? table.querySelector('.typeInput')
+                : null;
+
+        const updateAircraftType = () => {
+            const selected = select.options[select.selectedIndex];
+
+            if (!typeInput || !selected) {
+                return;
+            }
+
+            const selectedRegistration = selected.value || selected.textContent;
+            const aircraft = aircrafts.find(item => item.callsign === selectedRegistration);
+
+            typeInput.value = aircraft ? aircraft.type : '';
+        };
+
+        if (!typeInput.value) {
+            updateAircraftType();
+        }
+
+        if (!select.disabled) {
+            select.addEventListener('change', updateAircraftType);
+        }
     });
 });
 
@@ -408,5 +439,36 @@ function submitDeleteFlightForm() {
 
     if (deleteForm) {
         deleteForm.submit();
+    }
+}
+
+function openDeleteLegModal(flightId, legId) {
+    const modal = document.getElementById('delete-leg-modal');
+    const flightField = document.getElementById('delete_leg_flight_id');
+    const legField = document.getElementById('delete_leg_id');
+    const deleteForm = document.getElementById('delete-leg-form');
+
+    if (flightField) {
+        flightField.value = flightId;
+    }
+
+    if (legField) {
+        legField.value = legId;
+    }
+
+    if (deleteForm) {
+        deleteForm.action = 'index.php?flight_id=' + encodeURIComponent(flightId) + '#table2';
+    }
+
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function closeDeleteLegModal() {
+    const modal = document.getElementById('delete-leg-modal');
+
+    if (modal) {
+        modal.style.display = 'none';
     }
 }

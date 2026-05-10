@@ -37,6 +37,143 @@ class Database
     }
 
     /* =================================================
+       SAVE OR UPDATE AIRCRAFT TIMING
+       Saves timing data for the selected flight.
+       If the flight already has aircraft data, it updates it.
+       If not, it creates aircraft data and links it to the flight.
+    ================================================= */
+
+    public function saveOrUpdateAircraftForFlight(
+        int $flightId,
+        ?string $pilot,
+        ?string $aircraftType,
+        ?string $registration,
+        ?int $oat,
+        ?int $ias,
+        ?string $tachoBegin,
+        ?string $tachoEnd,
+        ?string $offBlocks,
+        ?string $engineOff,
+        ?string $takeoffTime,
+        ?string $landingTime
+    ): bool {
+        $connection = $this->connect();
+        $connection->beginTransaction();
+
+        try {
+            $linkSql = 'SELECT Aircraft_idAircraft
+                        FROM flight_has_aircraft
+                        WHERE Flight_idFlight = :flight_id
+                        LIMIT 1';
+
+            $linkStatement = $connection->prepare($linkSql);
+            $linkStatement->execute([
+                'flight_id' => $flightId
+            ]);
+
+            $link = $linkStatement->fetch();
+
+            if ($link) {
+                $aircraftId = (int)$link['Aircraft_idAircraft'];
+
+                $updateSql = 'UPDATE aircraft
+                              SET
+                                  pilot = :pilot,
+                                  aircraft_type = :aircraft_type,
+                                  registration = :registration,
+                                  oat = :oat,
+                                  ias = :ias,
+                                  tacho_beg = :tacho_beg,
+                                  tacho_end = :tacho_end,
+                                  offblocks = :offblocks,
+                                  engine_off = :engine_off,
+                                  takeoff_time = :takeoff_time,
+                                  landing_time = :landing_time
+                              WHERE idAircraft = :aircraft_id';
+
+                $updateStatement = $connection->prepare($updateSql);
+                $updateStatement->execute([
+                    'pilot' => $this->emptyToNull($pilot),
+                    'aircraft_type' => $this->emptyToNull($aircraftType),
+                    'registration' => $this->emptyToNull($registration),
+                    'oat' => $oat,
+                    'ias' => $ias,
+                    'tacho_beg' => $this->emptyToNull($tachoBegin),
+                    'tacho_end' => $this->emptyToNull($tachoEnd),
+                    'offblocks' => $this->emptyTimeToNull($offBlocks),
+                    'engine_off' => $this->emptyTimeToNull($engineOff),
+                    'takeoff_time' => $this->emptyTimeToNull($takeoffTime),
+                    'landing_time' => $this->emptyTimeToNull($landingTime),
+                    'aircraft_id' => $aircraftId
+                ]);
+            } else {
+                $insertSql = 'INSERT INTO aircraft (
+                                  pilot,
+                                  aircraft_type,
+                                  registration,
+                                  oat,
+                                  ias,
+                                  tacho_beg,
+                                  tacho_end,
+                                  offblocks,
+                                  engine_off,
+                                  takeoff_time,
+                                  landing_time
+                              ) VALUES (
+                                  :pilot,
+                                  :aircraft_type,
+                                  :registration,
+                                  :oat,
+                                  :ias,
+                                  :tacho_beg,
+                                  :tacho_end,
+                                  :offblocks,
+                                  :engine_off,
+                                  :takeoff_time,
+                                  :landing_time
+                              )';
+
+                $insertStatement = $connection->prepare($insertSql);
+                $insertStatement->execute([
+                    'pilot' => $this->emptyToNull($pilot),
+                    'aircraft_type' => $this->emptyToNull($aircraftType),
+                    'registration' => $this->emptyToNull($registration),
+                    'oat' => $oat,
+                    'ias' => $ias,
+                    'tacho_beg' => $this->emptyToNull($tachoBegin),
+                    'tacho_end' => $this->emptyToNull($tachoEnd),
+                    'offblocks' => $this->emptyTimeToNull($offBlocks),
+                    'engine_off' => $this->emptyTimeToNull($engineOff),
+                    'takeoff_time' => $this->emptyTimeToNull($takeoffTime),
+                    'landing_time' => $this->emptyTimeToNull($landingTime)
+                ]);
+
+                $aircraftId = (int)$connection->lastInsertId();
+
+                $connectSql = 'INSERT INTO flight_has_aircraft (
+                                   Flight_idFlight,
+                                   Aircraft_idAircraft
+                               ) VALUES (
+                                   :flight_id,
+                                   :aircraft_id
+                               )';
+
+                $connectStatement = $connection->prepare($connectSql);
+                $connectStatement->execute([
+                    'flight_id' => $flightId,
+                    'aircraft_id' => $aircraftId
+                ]);
+            }
+
+            $connection->commit();
+            return true;
+        } catch (Throwable $exception) {
+            $connection->rollBack();
+            throw $exception;
+        }
+    }
+
+    /* =================================================
        GET ALL FLIGHTS
        Gets all saved flights from the database.
     ================================================= */
@@ -108,7 +245,27 @@ class Database
 
     public function getFlightById(int $flightId): ?array
     {
-        $sql = 'SELECT * FROM flight WHERE idFlight = :flight_id LIMIT 1';
+        $sql = 'SELECT
+                    flight.*,
+                    aircraft.pilot,
+                    aircraft.aircraft_type,
+                    aircraft.registration,
+                    aircraft.oat,
+                    aircraft.ias,
+                    aircraft.tacho_beg,
+                    aircraft.tacho_end,
+                    aircraft.offblocks,
+                    aircraft.engine_off,
+                    aircraft.takeoff_time,
+                    aircraft.landing_time
+                FROM flight
+                LEFT JOIN flight_has_aircraft
+                    ON flight.idFlight = flight_has_aircraft.Flight_idFlight
+                LEFT JOIN aircraft
+                    ON flight_has_aircraft.Aircraft_idAircraft = aircraft.idAircraft
+                WHERE flight.idFlight = :flight_id
+                LIMIT 1';
+
         $statement = $this->connect()->prepare($sql);
         $statement->execute([
             'flight_id' => $flightId
@@ -516,6 +673,15 @@ class Database
        Converts empty time fields to NULL so MySQL does
        not receive invalid time values.
     ================================================= */
+
+    private function emptyToNull(?string $value): ?string
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        return $value;
+    }
 
     private function emptyTimeToNull(?string $time): ?string
     {

@@ -24,6 +24,11 @@ DROP TABLE IF EXISTS `aircraft`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `aircraft` (
   `idAircraft` int(11) NOT NULL AUTO_INCREMENT,
+  `pilot` varchar(100) DEFAULT NULL,
+  `aircraft_type` varchar(100) DEFAULT NULL,
+  `registration` varchar(20) DEFAULT NULL,
+  `oat` int(11) DEFAULT NULL,
+  `ias` int(11) DEFAULT NULL,
   `tacho_beg` int(11) DEFAULT NULL,
   `tacho_end` int(11) DEFAULT NULL,
   `offblocks` time DEFAULT NULL,
@@ -40,7 +45,7 @@ CREATE TABLE `aircraft` (
 
 LOCK TABLES `aircraft` WRITE;
 /*!40000 ALTER TABLE `aircraft` DISABLE KEYS */;
-INSERT INTO `aircraft` VALUES (1,678,689,'10:00:00','11:00:00','11:05:00','13:00:00');
+INSERT INTO `aircraft` VALUES (1,'','DR-400','PH-HLR',NULL,NULL,678,689,'10:00:00','11:00:00','11:05:00','13:00:00');
 /*!40000 ALTER TABLE `aircraft` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -1,1 +1,15 @@
+# macOS
+.DS_Store
+
+# JetBrains / PhpStorm
 .idea/
+
+# Local environment files
+.env
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
