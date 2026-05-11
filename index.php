@@ -669,10 +669,12 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
             <li><a href="#add-flight-panel">Add flight</a></li>
             <li><a href="#add-leg-panel">New leg</a></li>
             <li><a href="#fuel-calculation-panel">Fuel calculation</a></li>
+            <li><a href="#graphical-leg-view" id="menu_graphical_leg_link">Graphical leg view</a></li>
+            <li><a href="#graphical-leg-view" id="menu_correction_link">Correction 1:60</a></li>
             <li><a href="#weather-panel">METAR</a></li>
             <li><a href="#taf-panel">TAF</a></li>
         </ul>
-    </nav>
+</nav>
 
 </header>
 
@@ -1369,7 +1371,139 @@ function validatePostIntRange(string $fieldName, string $label, int $min, int $m
         </tr>
     </table>
 
+    <?php if ($selectedFlight && !empty($selectedLegs)): ?>
+        <?php
+        $graphicLeg = $selectedLegs[0];
+        $graphicStart = e($selectedFlight['departure'] ?? 'DEP');
+        $graphicCheckpoint = e($graphicLeg['checkpoint_location'] ?? 'Checkpoint');
+        $graphicDestination = e($selectedFlight['destination'] ?? 'DEST');
+        // Use the distance of the selected leg as the maximum value for the measuring point slider.
+        $graphicDistance = max(1, (int)($graphicLeg['dist_int'] ?? 20));
+        ?>
+        <section id="graphical-leg-view" class="graphical-leg-panel">
+            <div class="graphical-leg-header">
+                <div>
+                    <h2>Graphical leg view</h2>
+                    <p>Visual helper based on the first loaded leg of the selected flight.</p>
+                </div>
+                <div class="graphical-leg-actions">
+                    <span>
+                        Flight <?= (int)$selectedFlight['idFlight'] ?> -
+                        <?= e($selectedFlight['departure'] ?? '') ?> to <?= e($selectedFlight['destination'] ?? '') ?>
+                    </span>
+                    <button type="button" class="correction-toggle-button" id="correction_toggle_button" aria-expanded="false">
+                        1:60 correction
+                    </button>
+                </div>
+            </div>
 
+            <div class="graphical-leg-grid">
+                <div class="graphical-leg-card">
+                    <h3>Route</h3>
+                    <div class="route-line">
+                        <span class="route-point route-start"><?= $graphicStart ?></span>
+                        <span class="route-segment"></span>
+                        <span class="route-point route-checkpoint"><?= $graphicCheckpoint ?></span>
+                        <span class="route-segment"></span>
+                        <span class="route-point route-end"><?= $graphicDestination ?></span>
+                    </div>
+                </div>
+
+                <div class="graphical-leg-card">
+                    <h3>Selected leg data</h3>
+                    <dl class="leg-data-list">
+                        <div>
+                            <dt>Checkpoint</dt>
+                            <dd><?= e($graphicLeg['checkpoint_location'] ?? '') ?></dd>
+                        </div>
+                        <div>
+                            <dt>Frequency</dt>
+                            <dd><?= e($graphicLeg['checkpoint_frequency'] ?? '') ?></dd>
+                        </div>
+                        <div>
+                            <dt>Time interval</dt>
+                            <dd><?= e($graphicLeg['time_int'] ?? '') ?> min</dd>
+                        </div>
+                        <div>
+                            <dt>Distance interval</dt>
+                            <dd><?= e($graphicLeg['dist_int'] ?? '') ?> NM</dd>
+                        </div>
+                        <div>
+                            <dt>True track</dt>
+                            <dd><?= e($graphicLeg['tt'] ?? '') ?>°</dd>
+                        </div>
+                        <div>
+                            <dt>Ground speed</dt>
+                            <dd><?= e($graphicLeg['gs'] ?? '') ?> kt</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <!-- Interactive measuring point calculator based on the selected leg distance. -->
+                <div class="graphical-leg-card measuring-point-card" id="measuring_point_card" aria-hidden="true">
+                    <h3>1:60 correction calculator</h3>
+                    <p class="measuring-point-intro">
+                        Use the slider to calculate off-track, closing angle and course correction values.
+                    </p>
+
+                    <!-- The total distance is passed to JavaScript with a data attribute. -->
+                    <div class="measuring-point-controls" data-total-distance="<?= $graphicDistance ?>">
+                        <div class="measuring-point-field">
+                            <label for="track_error_input">Track error per NM</label>
+                            <input id="track_error_input" type="text" value="3" inputmode="numeric" pattern="[0-9]*" maxlength="2">
+                        </div>
+
+                        <div class="measuring-point-field">
+                            <label for="measuring_point_slider">Measuring point</label>
+                            <input id="measuring_point_slider" type="range" min="1" max="<?= $graphicDistance ?>" value="1">
+                        </div>
+                    </div>
+
+                    <!-- The marker position will be updated live by JavaScript. -->
+                    <div class="measuring-point-visual">
+                        <span class="measuring-point-label">0 NM</span>
+                        <div class="measuring-point-track">
+                            <span id="measuring_point_marker" class="measuring-point-marker"></span>
+                        </div>
+                        <span class="measuring-point-label"><?= $graphicDistance ?> NM</span>
+                    </div>
+
+                    <div class="measuring-point-results">
+                        <div>
+                            <span>Selected NM</span>
+                            <strong id="selected_nm_value">1</strong>
+                        </div>
+                        <div>
+                            <span>Off-track</span>
+                            <strong id="off_track_value">3</strong>
+                        </div>
+                        <div>
+                            <span>Closing angle</span>
+                            <strong id="closing_angle_value">2</strong>
+                        </div>
+                        <div>
+                            <span>+/- Course correction</span>
+                            <strong id="course_correction_value">5</strong>
+                        </div>
+                    </div>
+
+                    <!-- This table is filled dynamically when the slider or track error changes. -->
+                    <table class="measuring-point-table">
+                        <thead>
+                        <tr>
+                            <th>NM</th>
+                            <th>Off-track</th>
+                            <th>Closing angle</th>
+                            <th>+/- Course correction</th>
+                        </tr>
+                        </thead>
+                        <tbody id="measuring_point_table_body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <footer>
         <a href="#" onclick="toggleAchtergrond(event)">Light/Dark Mode</a> |

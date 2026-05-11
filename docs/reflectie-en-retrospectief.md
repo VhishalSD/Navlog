@@ -18,7 +18,7 @@ De opdracht benoemt dat de applicatie volgens OOP-concepten moet werken. In mijn
 
 Ik heb een webapplicatie gebouwd waarin de gebruiker eerst een flight selecteert of aanmaakt. Daarna worden de gegevens van die geselecteerde flight geladen in de interface. Bij een geselecteerde flight kan de gebruiker legs toevoegen, bewerken en verwijderen. De opgeslagen legs worden in de NAVLOG-tabel weergegeven.
 
-Daarnaast heb ik extra onderdelen toegevoegd, zoals aircraft- en timinggegevens, METAR/TAF-weerinformatie, een fuel calculation, custom delete modals, validaties, screenshots, een database-export en een README.
+Daarnaast heb ik extra onderdelen toegevoegd, zoals aircraft- en timinggegevens, METAR/TAF-weerinformatie, een fuel calculation, een graphical leg view, een 1:60 correction calculator, custom delete modals, validaties, screenshots, een database-export en een README.
 
 Belangrijke onderdelen van de applicatie zijn:
 
@@ -31,6 +31,8 @@ Belangrijke onderdelen van de applicatie zijn:
 - Aircraft- en timinggegevens opslaan per flight.
 - METAR/TAF-weerinformatie ophalen met `WeatherScraper.php`.
 - Fuel calculation uitvoeren.
+- Graphical leg view tonen op basis van de geselecteerde flight en eerste geladen leg.
+- 1:60 correction calculator gebruiken met slider, off-track, closing angle en course correction.
 - Server-side validatie.
 - Custom confirmation modals voor delete-acties.
 - Light/Dark Mode, Step guide en printweergave.
@@ -53,6 +55,7 @@ Belangrijke onderdelen van de applicatie zijn:
 |---|---|
 | KNMI scraper class | `WeatherScraper.php` haalt METAR/TAF-data op en toont onder andere windrichting en windsnelheid op basis van een ICAO-code. |
 | Fuel calculation tabel en codelogica | De applicatie bevat een fuel calculation panel met invoervelden, berekende total required fuel, remaining fuel en fuel status. |
+| 1:60 correction / meetpuntberekening | De applicatie bevat een interactieve 1:60 correction calculator met slider, off-track, closing angle, course correction en een tabel tot 5 NM. Deze is via het linkermenu en de graphical leg view te openen en blijft zichtbaar in de printweergave. |
 | Printweergave | De NAVLOG-tabellen kunnen worden geprint zonder menu, knoppen en formulieren. |
 | Light/Dark Mode | De interface heeft een Light/Dark Mode als extra gebruikersoptie. |
 | Step guide | De applicatie bevat een Step guide die de gebruiker door belangrijke invoervelden begeleidt. |
@@ -74,7 +77,7 @@ De `Leg` class vertegenwoordigt één navigatieleg. Deze class bevat basisgegeve
 
 ### Frontend
 
-De frontend bestaat uit HTML, CSS en JavaScript. De CSS is gebruikt voor de layout, panels, tabellen, modals en printweergave. JavaScript is gebruikt voor dropdownlogica, aircraft type koppeling, fuel calculation, step guide, success messages, delete modals, printen en Light/Dark Mode.
+De frontend bestaat uit HTML, CSS en JavaScript. De CSS is gebruikt voor de layout, panels, tabellen, modals en printweergave. JavaScript is gebruikt voor dropdownlogica, aircraft type koppeling, fuel calculation, de 1:60 correction calculator, step guide, success messages, delete modals, printen en Light/Dark Mode.
 
 ## 7. Database en datastructuur
 
@@ -120,6 +123,8 @@ Ik heb de applicatie getest op de belangrijkste functies.
 | METAR ophalen | Werkt |
 | TAF ophalen | Werkt |
 | Fuel calculation | Werkt |
+| Graphical leg view | Werkt |
+| 1:60 correction calculator | Werkt |
 | Light/Dark Mode | Werkt |
 | Step guide | Werkt |
 | Printweergave | Werkt |
@@ -133,20 +138,23 @@ De screenshots staan in de map:
 screenshots/
 ```
 
-De map bevat screenshots van onder andere:
+De map bevat de volgende screenshots:
 
-- Selected flight.
-- Manage selected flight.
-- Manage aircraft and timing data.
-- Add/Edit leg.
-- NAVLOG-tabel met CRUD-acties.
-- Delete leg modal.
-- Validatievoorbeeld.
-- METAR/TAF.
-- Fuel calculation.
-- Light/Dark Mode.
-- Step guide.
-- Printweergave.
+- `01-selected-flight.png` - geselecteerde flight met geladen gegevens.
+- `02-manage-flight.png` - beheren van de geselecteerde flight.
+- `03-aircraft-timing.png` - aircraft- en timinggegevens per flight.
+- `04-add-leg.png` - formulier om een nieuwe leg toe te voegen.
+- `05-edit-leg.png` - formulier om een bestaande leg te bewerken.
+- `06-navlog-table-leg-crud.png` - NAVLOG-tabel met opgeslagen legs en CRUD-acties.
+- `07-delete-leg-modal.png` - custom delete modal voor het verwijderen van een leg.
+- `08-validation-example.png` - voorbeeld van server-side validatie.
+- `09-weather-metar-taf.png` - METAR/TAF-weerinformatie.
+- `10-fuel-calculation.png` - fuel calculation panel.
+- `11-light-dark-mode.png` - Light/Dark Mode.
+- `12-step-guide.png` - Step guide.
+- `13-print-view.png` - opgeschoonde printweergave.
+- `14-graphical-leg-view.png` - graphical leg view met de routeweergave van de geselecteerde flight en leg.
+- `15-1-60-correction-calculator.png` - geopende 1:60 correction calculator met slider, off-track, closing angle en course correction.
 
 ## 11. Reflectie
 
@@ -156,7 +164,7 @@ Een lastig onderdeel was het goed laten samenwerken van de backend, database en 
 
 Ook validatie was een belangrijk leerpunt. In het begin konden sommige verkeerde waarden nog worden opgeslagen. Later heb ik de validatie verbeterd zodat lege of ongeldige velden worden geblokkeerd voordat ze de database bereiken.
 
-Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daarom zijn de panels gesplitst, is de kleine blauwe tabel readonly gemaakt, zijn delete-acties voorzien van custom modals en is de printweergave opgeschoond.
+Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daarom zijn de panels gesplitst, is de kleine blauwe tabel readonly gemaakt, zijn delete-acties voorzien van custom modals, is de graphical leg view toegevoegd en is de printweergave opgeschoond.
 
 ## 12. Retrospectief
 
@@ -167,6 +175,7 @@ Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daa
 - De OOP-structuur met `Leg` en `LegArray` is duidelijker geworden.
 - Validaties zijn verbeterd.
 - De interface is overzichtelijker gemaakt.
+- De graphical leg view en 1:60 correction calculator sluiten beter aan op het aangeleverde NAVLOG-design.
 - De projectmap bevat README, screenshots en een database-export.
 
 ### Wat was lastig?
@@ -185,4 +194,4 @@ Daarnaast zou ik de JavaScript-data zoals airports, aircraft en frequencies late
 
 ## 13. Conclusie
 
-Ik heb een werkende NAVLOG-applicatie gemaakt met PHP, MySQL, PDO en OOP. De applicatie ondersteunt flightbeheer, legbeheer, databaseopslag, validatie, weather data, fuel calculation, screenshots, een database-export en een nette README. Het project is geschikt om in te leveren en laat zien dat ik backend, database, OOP en frontend kan combineren in één werkende applicatie.
+Ik heb een werkende NAVLOG-applicatie gemaakt met PHP, MySQL, PDO en OOP. De applicatie ondersteunt flightbeheer, legbeheer, databaseopslag, validatie, weather data, fuel calculation, graphical leg view, 1:60 correction, screenshots, een database-export en een nette README. Het project is geschikt om in te leveren en laat zien dat ik backend, database, OOP en frontend kan combineren in één werkende applicatie.

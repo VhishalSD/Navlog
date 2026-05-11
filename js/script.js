@@ -9,7 +9,7 @@
 ================================================= */
 
 const airports = [
-    {name: 'Kies veld', code: 'EH--', elevation: 0},
+    {name: 'Select airport', code: 'EH--', elevation: 0},
     {name: 'Rotterdam', code: 'EHRD', elevation: -14},
     {name: 'Midden-Zeeland', code: 'EHMZ', elevation: 6},
     {name: 'Seppe', code: 'EHSE', elevation: 30},
@@ -19,7 +19,7 @@ const airports = [
 ];
 
 const aircrafts = [
-    {callsign: 'Kies toestel', type: ''},
+    {callsign: 'Select aircraft', type: ''},
     {callsign: 'PH-HLR', type: 'DR-400'},
     {callsign: 'PH-NSC', type: 'DR-400'},
     {callsign: 'PH-SPZ', type: 'DR-400'},
@@ -32,7 +32,7 @@ const aircrafts = [
 ];
 
 const frequencies = [
-    {name: 'Kies veld', freq: ''},
+    {name: 'Select frequency', freq: ''},
     {name: 'Rotterdam Tower', freq: '118.205'},
     {name: 'Midden-Zeeland Radio', freq: '119.255'},
     {name: 'Seppe Tower', freq: '120.655'},
@@ -62,6 +62,10 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeAircraftDropdowns();
     initializeFrequencyDropdowns();
     initializeAlternateAirportDropdown();
+    initializeMeasuringPointCalculator();
+    initializeCorrectionToggle();
+    initializeCorrectionMenuLink();
+    initializeGraphicalLegMenuLink();
     initializeSuccessMessageAutoHide();
 });
 
@@ -307,6 +311,148 @@ function calculateFuel() {
     totalRequiredFuelOutput.textContent = totalRequiredFuel.toFixed(1);
     remainingFuelOutput.textContent = remainingFuel.toFixed(1);
     fuelStatusOutput.textContent = fuelStatus;
+}
+
+/* =================================================
+   MEASURING POINT CALCULATOR
+   Updates the measuring point slider, marker and
+   correction table for the selected graphical leg.
+================================================= */
+
+function initializeMeasuringPointCalculator() {
+    const controls = document.querySelector('.measuring-point-controls');
+    const slider = document.getElementById('measuring_point_slider');
+    const trackErrorInput = document.getElementById('track_error_input');
+    const marker = document.getElementById('measuring_point_marker');
+    const selectedNmOutput = document.getElementById('selected_nm_value');
+    const offTrackOutput = document.getElementById('off_track_value');
+    const closingAngleOutput = document.getElementById('closing_angle_value');
+    const courseCorrectionOutput = document.getElementById('course_correction_value');
+    const tableBody = document.getElementById('measuring_point_table_body');
+
+    if (!controls || !slider || !trackErrorInput || !marker || !selectedNmOutput || !offTrackOutput || !closingAngleOutput || !courseCorrectionOutput || !tableBody) {
+        return;
+    }
+
+    // The maximum distance comes from the selected leg and is stored in index.php as a data attribute.
+    const totalDistance = Math.max(1, parseInt(controls.dataset.totalDistance, 10) || 1);
+    slider.max = String(totalDistance);
+
+    const updateCalculator = () => {
+        const selectedNm = Math.max(1, parseInt(slider.value, 10) || 1);
+        const trackError = getTrackErrorValue(trackErrorInput);
+
+        // The old example table uses the selected NM multiplied by the track error.
+        const offTrack = selectedNm * trackError;
+
+        // The closing angle follows the same simple correction pattern as the original measuring point example.
+        const closingAngle = selectedNm * 2;
+
+        // Course correction combines the off-track value and the closing angle.
+        const courseCorrection = offTrack + closingAngle;
+
+        selectedNmOutput.textContent = String(selectedNm);
+        offTrackOutput.textContent = formatMeasuringPointNumber(offTrack);
+        closingAngleOutput.textContent = formatMeasuringPointNumber(closingAngle);
+        courseCorrectionOutput.textContent = formatMeasuringPointNumber(courseCorrection);
+
+        updateMeasuringPointMarker(marker, selectedNm, totalDistance);
+        fillMeasuringPointTable(tableBody, totalDistance, trackError);
+    };
+
+    slider.addEventListener('input', updateCalculator);
+    trackErrorInput.addEventListener('input', updateCalculator);
+
+    updateCalculator();
+}
+
+function initializeCorrectionToggle() {
+    const toggleButton = document.getElementById('correction_toggle_button');
+    const measuringPointCard = document.getElementById('measuring_point_card');
+
+    if (!toggleButton || !measuringPointCard) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', function () {
+        const isVisible = measuringPointCard.classList.toggle('is-visible');
+
+        // Keep the accessibility state in sync with the visible state.
+        measuringPointCard.setAttribute('aria-hidden', String(!isVisible));
+        toggleButton.setAttribute('aria-expanded', String(isVisible));
+        toggleButton.textContent = isVisible ? 'Hide 1:60 correction' : '1:60 correction';
+    });
+}
+
+function initializeCorrectionMenuLink() {
+    const menuLink = document.getElementById('menu_correction_link');
+    const toggleButton = document.getElementById('correction_toggle_button');
+    const measuringPointCard = document.getElementById('measuring_point_card');
+
+    if (!menuLink || !toggleButton || !measuringPointCard) {
+        return;
+    }
+
+    menuLink.addEventListener('click', function () {
+        // Open the 1:60 correction panel when the user navigates to it from the left menu.
+        if (!measuringPointCard.classList.contains('is-visible')) {
+            measuringPointCard.classList.add('is-visible');
+            measuringPointCard.setAttribute('aria-hidden', 'false');
+            toggleButton.setAttribute('aria-expanded', 'true');
+            toggleButton.textContent = 'Hide 1:60 correction';
+        }
+    });
+}
+
+function initializeGraphicalLegMenuLink() {
+    const menuLink = document.getElementById('menu_graphical_leg_link');
+
+    if (!menuLink) {
+        return;
+    }
+
+    menuLink.addEventListener('click', function () {
+        // This menu item only navigates to the graphical leg view.
+        // The correction panel stays closed unless the user chooses Correction 1:60.
+    });
+}
+
+function getTrackErrorValue(trackErrorInput) {
+    trackErrorInput.value = trackErrorInput.value.replace(/\D/g, '').slice(0, 2);
+
+    return Math.max(0, parseInt(trackErrorInput.value, 10) || 0);
+}
+
+function updateMeasuringPointMarker(marker, selectedNm, totalDistance) {
+    const percentage = totalDistance <= 1 ? 0 : ((selectedNm - 1) / (totalDistance - 1)) * 100;
+    marker.style.left = percentage + '%';
+}
+
+function fillMeasuringPointTable(tableBody, totalDistance, trackError) {
+    tableBody.innerHTML = '';
+
+    // The original correction table only shows the first five nautical miles.
+    const maxRows = Math.min(5, totalDistance);
+
+    for (let nm = 1; nm <= maxRows; nm++) {
+        const row = document.createElement('tr');
+        const offTrack = nm * trackError;
+        const closingAngle = nm * 2;
+        const courseCorrection = offTrack + closingAngle;
+
+        row.innerHTML = `
+            <td>${nm}</td>
+            <td>${formatMeasuringPointNumber(offTrack)}</td>
+            <td>${formatMeasuringPointNumber(closingAngle)}</td>
+            <td>${formatMeasuringPointNumber(courseCorrection)}</td>
+        `;
+
+        tableBody.appendChild(row);
+    }
+}
+
+function formatMeasuringPointNumber(value) {
+    return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 /* =================================================
