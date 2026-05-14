@@ -1,7 +1,7 @@
 /* =================================================
    NAVLOG FRONTEND SCRIPT
-   Handles UI actions, dropdown logic, fuel calculation,
-   guide steps, success messages and delete modals.
+   Handles table calculations, dropdowns, fuel checks,
+   guide steps, messages and delete modals.
 ================================================= */
 
 /* =================================================
@@ -65,9 +65,159 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeMeasuringPointCalculator();
     initializeCorrectionToggle();
     initializeCorrectionMenuLink();
-    initializeGraphicalLegMenuLink();
+    initializeNavlogTableCalculations();
     initializeSuccessMessageAutoHide();
 });
+
+/* =================================================
+   NAVLOG TABLE CALCULATIONS
+   Updates calculated red cells when the user edits
+   input values in the blue NAVLOG table.
+================================================= */
+
+function initializeNavlogTableCalculations() {
+    const navlogTable = document.getElementById('table2');
+
+    if (!navlogTable) {
+        return;
+    }
+
+    const calculatedFields = ['variation', 'wind_dir', 'wind_v', 'tt', 'dist_int'];
+
+    navlogTable.addEventListener('input', function (event) {
+        const input = event.target;
+
+        if (!input.matches('.navlog-input')) {
+            return;
+        }
+
+        if (!calculatedFields.includes(input.dataset.field)) {
+            return;
+        }
+
+        updateNavlogTableCalculations(navlogTable);
+    });
+
+    updateNavlogTableCalculations(navlogTable);
+}
+
+function updateNavlogTableCalculations(navlogTable) {
+    const rows = Array.from(navlogTable.querySelectorAll('tbody tr'));
+    let accumulatedTime = 0;
+    let accumulatedDistance = 0;
+
+    rows.forEach(row => {
+        const variation = getNavlogRowNumber(row, 'variation');
+        const windDirection = getNavlogRowNumber(row, 'wind_dir');
+        const windVelocity = getNavlogRowNumber(row, 'wind_v');
+        const trueTrack = getNavlogRowNumber(row, 'tt');
+        const distanceInterval = getNavlogRowNumber(row, 'dist_int');
+        const tas = getNavlogTas(navlogTable);
+
+        if (!hasNavlogCalculationInput(row)) {
+            setNavlogCalculatedValue(row, 1, '');
+            setNavlogCalculatedValue(row, 2, '');
+            setNavlogCalculatedValue(row, 10, '');
+            setNavlogCalculatedValue(row, 12, '');
+            setNavlogCalculatedValue(row, 13, '');
+            setNavlogCalculatedValue(row, 18, '');
+            setNavlogCalculatedValue(row, 19, '');
+            return;
+        }
+
+        const wca = calculateHeadingWca(windDirection, trueTrack, windVelocity, tas);
+        const trueHeading = normalizeDegrees(trueTrack + wca);
+        const magneticHeading = normalizeDegrees(trueHeading - variation);
+        const groundSpeed = calculateGroundSpeed(windDirection, windVelocity, trueTrack, tas);
+        const timeInterval = groundSpeed > 0 && distanceInterval > 0
+            ? Math.round((distanceInterval / groundSpeed) * 60)
+            : 0;
+
+        accumulatedTime += timeInterval;
+        accumulatedDistance += distanceInterval;
+
+        setNavlogCalculatedValue(row, 1, accumulatedTime);
+        setNavlogCalculatedValue(row, 2, timeInterval);
+        setNavlogCalculatedValue(row, 10, magneticHeading);
+        setNavlogCalculatedValue(row, 12, trueHeading);
+        setNavlogCalculatedValue(row, 13, wca);
+        setNavlogCalculatedValue(row, 18, accumulatedDistance);
+        setNavlogCalculatedValue(row, 19, groundSpeed);
+    });
+}
+
+function getNavlogRowNumber(row, fieldName) {
+    const input = row.querySelector(`[data-field="${fieldName}"]`);
+    const value = input ? parseFloat(input.value) : 0;
+
+    return Number.isFinite(value) ? value : 0;
+}
+
+function hasNavlogCalculationInput(row) {
+    return ['variation', 'wind_dir', 'wind_v', 'tt', 'dist_int'].some(fieldName => {
+        const input = row.querySelector(`[data-field="${fieldName}"]`);
+        return input && input.value.trim() !== '';
+    });
+}
+
+function setNavlogCalculatedValue(row, cellIndex, value) {
+    const cell = row.cells[cellIndex];
+    const input = cell ? cell.querySelector('input') : null;
+
+    if (input) {
+        input.value = value;
+    }
+}
+
+function getNavlogTas(navlogTable) {
+    const tableTas = navlogTable ? parseFloat(navlogTable.dataset.tas) : NaN;
+
+    if (Number.isFinite(tableTas) && tableTas > 0) {
+        return tableTas;
+    }
+
+    const tasInput = document.querySelector('[name="tas"], [name="TAS"], #tas, #TAS');
+    const inputTas = tasInput ? parseFloat(tasInput.value) : NaN;
+
+    return Number.isFinite(inputTas) && inputTas > 0 ? inputTas : 105;
+}
+
+function calculateHeadingWca(windDirection, trueTrack, windVelocity, tas) {
+    const safeTas = Math.max(1, tas);
+    const angle = toRadians(trueTrack - (windDirection - 180));
+    const ratio = clamp((windVelocity * Math.sin(angle)) / safeTas, -1, 1);
+
+    return Math.round(toDegrees(Math.asin(ratio)));
+}
+
+function calculateGroundSpeed(windDirection, windVelocity, trueTrack, tas) {
+    const windAngle = toRadians(windDirection - trueTrack);
+    const groundSpeed = tas - (windVelocity * Math.cos(windAngle));
+
+    return Math.max(0, Math.round(groundSpeed));
+}
+
+function normalizeDegrees(degrees) {
+    let normalized = degrees % 360;
+
+    if (normalized < 0) {
+        normalized += 360;
+    }
+
+    return Math.round(normalized);
+}
+
+function toRadians(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function toDegrees(radians) {
+    return radians * 180 / Math.PI;
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
 
 /* =================================================
    LIGHT MODE
@@ -88,14 +238,24 @@ function printPagina() {
     const originalMargin = main ? main.style.marginLeft : '';
     const originalDisplay = nav ? nav.style.display : '';
 
-    if (main) main.style.marginLeft = '0';
-    if (nav) nav.style.display = 'none';
+    if (main) {
+        main.style.marginLeft = '0';
+    }
+
+    if (nav) {
+        nav.style.display = 'none';
+    }
 
     setTimeout(() => {
         window.print();
 
-        if (main) main.style.marginLeft = originalMargin;
-        if (nav) nav.style.display = originalDisplay;
+        if (main) {
+            main.style.marginLeft = originalMargin;
+        }
+
+        if (nav) {
+            nav.style.display = originalDisplay;
+        }
     }, 100);
 }
 
@@ -314,9 +474,9 @@ function calculateFuel() {
 }
 
 /* =================================================
-   MEASURING POINT CALCULATOR
-   Updates the measuring point slider, marker and
-   correction table for the selected graphical leg.
+   1:60 CORRECTION CALCULATOR
+   Updates the measuring point slider, route marker
+   and correction values for the selected leg.
 ================================================= */
 
 function initializeMeasuringPointCalculator() {
@@ -334,29 +494,29 @@ function initializeMeasuringPointCalculator() {
         return;
     }
 
-    // The maximum distance comes from the selected leg and is stored in index.php as a data attribute.
+    // The maximum distance comes from the selected leg.
     const totalDistance = Math.max(1, parseInt(controls.dataset.totalDistance, 10) || 1);
     slider.max = String(totalDistance);
 
     const updateCalculator = () => {
-        const selectedNm = Math.max(1, parseInt(slider.value, 10) || 1);
+        const distanceFlown = Math.max(1, parseInt(slider.value, 10) || 1);
         const trackError = getTrackErrorValue(trackErrorInput);
 
-        // The old example table uses the selected NM multiplied by the track error.
-        const offTrack = selectedNm * trackError;
+        // Off-track distance follows the selected NM and track error.
+        const offTrack = distanceFlown * trackError;
 
-        // The closing angle follows the same simple correction pattern as the original measuring point example.
-        const closingAngle = selectedNm * 2;
+        // Closing angle uses the same simple correction pattern.
+        const closingAngle = distanceFlown * 2;
 
-        // Course correction combines the off-track value and the closing angle.
+        // Course correction combines off-track distance and closing angle.
         const courseCorrection = offTrack + closingAngle;
 
-        selectedNmOutput.textContent = String(selectedNm);
+        selectedNmOutput.textContent = String(distanceFlown);
         offTrackOutput.textContent = formatMeasuringPointNumber(offTrack);
         closingAngleOutput.textContent = formatMeasuringPointNumber(closingAngle);
         courseCorrectionOutput.textContent = formatMeasuringPointNumber(courseCorrection);
 
-        updateMeasuringPointMarker(marker, selectedNm, totalDistance);
+        updateMeasuringPointMarker(marker, distanceFlown, totalDistance);
         fillMeasuringPointTable(tableBody, totalDistance, trackError);
     };
 
@@ -377,7 +537,7 @@ function initializeCorrectionToggle() {
     toggleButton.addEventListener('click', function () {
         const isVisible = measuringPointCard.classList.toggle('is-visible');
 
-        // Keep the accessibility state in sync with the visible state.
+        // Keep accessibility state in sync with visibility.
         measuringPointCard.setAttribute('aria-hidden', String(!isVisible));
         toggleButton.setAttribute('aria-expanded', String(isVisible));
         toggleButton.textContent = isVisible ? 'Hide 1:60 correction' : '1:60 correction';
@@ -394,7 +554,7 @@ function initializeCorrectionMenuLink() {
     }
 
     menuLink.addEventListener('click', function () {
-        // Open the 1:60 correction panel when the user navigates to it from the left menu.
+        // Open the 1:60 correction panel from the menu.
         if (!measuringPointCard.classList.contains('is-visible')) {
             measuringPointCard.classList.add('is-visible');
             measuringPointCard.setAttribute('aria-hidden', 'false');
@@ -404,37 +564,23 @@ function initializeCorrectionMenuLink() {
     });
 }
 
-function initializeGraphicalLegMenuLink() {
-    const menuLink = document.getElementById('menu_graphical_leg_link');
-
-    if (!menuLink) {
-        return;
-    }
-
-    menuLink.addEventListener('click', function () {
-        // This menu item only navigates to the graphical leg view.
-        // The correction panel stays closed unless the user chooses Correction 1:60.
-    });
-}
-
 function getTrackErrorValue(trackErrorInput) {
     trackErrorInput.value = trackErrorInput.value.replace(/\D/g, '').slice(0, 2);
 
     return Math.max(0, parseInt(trackErrorInput.value, 10) || 0);
 }
 
-function updateMeasuringPointMarker(marker, selectedNm, totalDistance) {
-    const percentage = totalDistance <= 1 ? 0 : ((selectedNm - 1) / (totalDistance - 1)) * 100;
+function updateMeasuringPointMarker(marker, distanceFlown, totalDistance) {
+    const percentage = totalDistance <= 1 ? 0 : ((distanceFlown - 1) / (totalDistance - 1)) * 100;
     marker.style.left = percentage + '%';
 }
 
 function fillMeasuringPointTable(tableBody, totalDistance, trackError) {
     tableBody.innerHTML = '';
 
-    // The original correction table only shows the first five nautical miles.
-    const maxRows = Math.min(5, totalDistance);
+    const visibleRows = Math.min(5, totalDistance);
 
-    for (let nm = 1; nm <= maxRows; nm++) {
+    for (let nm = 1; nm <= visibleRows; nm++) {
         const row = document.createElement('tr');
         const offTrack = nm * trackError;
         const closingAngle = nm * 2;
@@ -538,8 +684,13 @@ function endGuide(event) {
     const overlay = document.getElementById('guide-overlay');
     const tooltip = document.getElementById('guide-tooltip');
 
-    if (overlay) overlay.style.display = 'none';
-    if (tooltip) tooltip.style.display = 'none';
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
 
     steps.forEach(step => step.removeAttribute('data-highlight'));
     steps = [];
@@ -609,7 +760,7 @@ function openDeleteLegModal(flightId, legId) {
     }
 
     if (deleteForm) {
-        deleteForm.action = 'index.php?flight_id=' + encodeURIComponent(flightId) + '#table2';
+        deleteForm.action = `index.php?flight_id=${encodeURIComponent(flightId)}#table2`;
     }
 
     if (modal) {

@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 /* =================================================
    LEG CLASS
-   This class represents one NAVLOG leg.
+   Represents one NAVLOG leg.
 
-   A leg contains the values from one row in the
-   navigation log table. The class also contains the
-   aviation calculations for headings, wind correction,
-   ground speed, distance and time.
+   The class stores the input values for one route leg
+   and calculates the derived NAVLOG values such as
+   WCA, TH, MH, GS and time interval.
 ================================================= */
 
 class Leg
 {
     private int $legNumber;
     private int $timeAcc;
-    private int $timeInt;
     private ?string $eto;
     private ?string $reto;
     private ?string $ato;
@@ -35,7 +33,6 @@ class Leg
     public function __construct(
         int $legNumber,
         int $timeAcc,
-        int $timeInt,
         ?string $eto,
         ?string $reto,
         ?string $ato,
@@ -53,7 +50,6 @@ class Leg
     ) {
         $this->legNumber = $legNumber;
         $this->timeAcc = $timeAcc;
-        $this->timeInt = $timeInt;
         $this->eto = $eto;
         $this->reto = $reto;
         $this->ato = $ato;
@@ -73,14 +69,13 @@ class Leg
     /* =================================================
        CREATE FROM DATABASE ROW
        Converts one database row into a Leg object.
+       Calculated values are recalculated by this class.
     ================================================= */
-
     public static function fromDatabaseRow(array $row, int $legNumber, int $tas = 105): self
     {
         return new self(
             $legNumber,
             (int)($row['time_acc'] ?? 0),
-            (int)($row['time_int'] ?? 0),
             self::nullableString($row['ETO'] ?? null),
             self::nullableString($row['RETO'] ?? null),
             self::nullableString($row['ATO'] ?? null),
@@ -130,7 +125,7 @@ class Leg
 
     public function getTimeInterval(): int
     {
-        return $this->timeInt;
+        return $this->calculateTimeInterval();
     }
 
     public function getEto(): ?string
@@ -207,7 +202,6 @@ class Leg
        CALCULATE WCA
        Calculates the Wind Correction Angle.
     ================================================= */
-
     public function calculateHeadingWca(): int
     {
         $angleDegrees = $this->trueTrack - ($this->windDirection - 180);
@@ -222,7 +216,6 @@ class Leg
        CALCULATE TRUE HEADING
        True heading is true track plus WCA.
     ================================================= */
-
     public function calculateHeadingTh(): int
     {
         return $this->normalizeDegrees($this->trueTrack + $this->calculateHeadingWca());
@@ -232,7 +225,6 @@ class Leg
        CALCULATE MAGNETIC HEADING
        Magnetic heading is true heading minus variation.
     ================================================= */
-
     public function calculateHeadingMh(): int
     {
         return $this->normalizeDegrees($this->calculateHeadingTh() - $this->headingVar);
@@ -242,7 +234,6 @@ class Leg
        CALCULATE GROUND SPEED
        Calculates an estimated ground speed using wind.
     ================================================= */
-
     public function calculateGroundSpeed(): int
     {
         $windAngle = deg2rad($this->windDirection - $this->trueTrack);
@@ -252,10 +243,27 @@ class Leg
     }
 
     /* =================================================
+       CALCULATE TIME INTERVAL
+       Calculates the time for this leg in minutes.
+
+       Formula:
+       time = distance / ground speed * 60
+    ================================================= */
+    public function calculateTimeInterval(): int
+    {
+        $groundSpeed = $this->calculateGroundSpeed();
+
+        if ($groundSpeed <= 0 || $this->distanceInterval <= 0) {
+            return 0;
+        }
+
+        return (int)round(($this->distanceInterval / $groundSpeed) * 60);
+    }
+
+    /* =================================================
        NORMALIZE DEGREES
        Keeps heading values between 0 and 359 degrees.
     ================================================= */
-
     private function normalizeDegrees(int|float $degrees): int
     {
         $degrees = (int)round($degrees) % 360;
@@ -271,18 +279,18 @@ class Leg
        TO ARRAY
        Makes it easy to show a Leg object in the GUI.
     ================================================= */
-
     public function toArray(): array
     {
         $wca = $this->calculateHeadingWca();
-        $trueHeading = $this->normalizeDegrees($this->trueTrack + $wca);
-        $magneticHeading = $this->normalizeDegrees($trueHeading - $this->headingVar);
+        $trueHeading = $this->calculateHeadingTh();
+        $magneticHeading = $this->calculateHeadingMh();
         $groundSpeed = $this->calculateGroundSpeed();
+        $timeInterval = $this->calculateTimeInterval();
 
         return [
             'leg_number' => $this->legNumber,
             'time_acc' => $this->timeAcc,
-            'time_int' => $this->timeInt,
+            'time_int' => $timeInterval,
             'ETO' => $this->eto,
             'RETO' => $this->reto,
             'ATO' => $this->ato,
@@ -300,7 +308,7 @@ class Leg
             'dist_int' => $this->distanceInterval,
             'dist_acc' => $this->distanceAcc,
             'tas' => $this->tas,
-            'gs' => $groundSpeed
+            'gs' => $groundSpeed,
         ];
     }
 }

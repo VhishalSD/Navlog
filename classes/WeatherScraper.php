@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 /* =================================================
    WEATHER SCRAPER CLASS
-   This class gets aviation weather information from
-   the KNMI aviation observations page.
+   Loads aviation weather data from KNMI.
 
-   The goal for this school project is to show that
-   wind data can be loaded for multiple ICAO codes,
-   for example EHRD and EHAM.
+   METAR data is used for current wind information.
+   TAF data is used for airport forecast information.
 ================================================= */
-
 class WeatherScraper
 {
     private string $metarSourceUrl = 'https://www.knmi.nl/nederland-nu/luchtvaart/vliegveldwaarnemingen';
@@ -19,10 +16,8 @@ class WeatherScraper
 
     /* =================================================
        GET WIND DATA
-       Gets wind direction and wind speed for one ICAO
-       airport code from the KNMI aviation page.
+       Returns wind direction and speed for one ICAO code.
     ================================================= */
-
     public function getWindData(string $icaoCode): ?array
     {
         $icaoCode = strtoupper(trim($icaoCode));
@@ -48,10 +43,8 @@ class WeatherScraper
 
     /* =================================================
        GET TAF DATA
-       Gets the TAF forecast text for one ICAO airport
-       code from the KNMI aviation page.
+       Returns the TAF forecast text for one ICAO code.
     ================================================= */
-
     public function getTafData(string $icaoCode): ?array
     {
         $icaoCode = strtoupper(trim($icaoCode));
@@ -74,16 +67,14 @@ class WeatherScraper
 
         return [
             'icao' => $icaoCode,
-            'taf' => $tafLine
+            'taf' => $tafLine,
         ];
     }
 
     /* =================================================
        VALIDATE ICAO CODE
-       Checks if the ICAO code contains exactly four
-       letters, for example EHRD or EHAM.
+       Checks for exactly four letters, for example EHRD.
     ================================================= */
-
     private function isValidIcaoCode(string $icaoCode): bool
     {
         return preg_match('/^[A-Z]{4}$/', $icaoCode) === 1;
@@ -91,16 +82,14 @@ class WeatherScraper
 
     /* =================================================
        GET PAGE CONTENT
-       Loads the KNMI page. A timeout is used so the
-       application does not hang if the website is slow.
+       Loads a KNMI page with a short timeout.
     ================================================= */
-
     private function getPageContent(string $url): ?string
     {
         $context = stream_context_create([
             'http' => [
                 'timeout' => 5,
-                'header' => "User-Agent: NAVLOG-School-Project\r\n"
+                'header' => "User-Agent: NAVLOG\r\n"
             ]
         ]);
 
@@ -115,10 +104,8 @@ class WeatherScraper
 
     /* =================================================
        FIND METAR LINE
-       Searches for a METAR line that starts with the
-       selected ICAO code.
+       Searches the page text for the selected METAR.
     ================================================= */
-
     private function findMetarLine(string $content, string $icaoCode): ?string
     {
         $content = preg_replace('/\s+/', ' ', $content) ?? '';
@@ -134,11 +121,8 @@ class WeatherScraper
 
     /* =================================================
        FIND TAF LINE
-       Searches for a TAF forecast for the selected
-       ICAO code. The regex stops before the next TAF
-       or METAR block when possible.
+       Searches the page text for the selected TAF.
     ================================================= */
-
     private function findTafLine(string $content, string $icaoCode): ?string
     {
         $content = preg_replace('/\s+/', ' ', $content) ?? '';
@@ -163,11 +147,10 @@ class WeatherScraper
        Reads the wind group from a METAR line.
 
        Examples:
-       23012KT  = direction 230, speed 12 kt
-       VRB03KT  = variable wind, speed 3 kt
-       00000KT  = calm wind
+       23012KT = direction 230, speed 12 kt
+       VRB03KT = variable wind, speed 3 kt
+       00000KT = calm wind
     ================================================= */
-
     private function extractWindFromMetar(string $metarLine, string $icaoCode): ?array
     {
         if (!preg_match('/\b(\d{3}|VRB)(\d{2,3})KT\b/i', $metarLine, $matches)) {
@@ -181,7 +164,7 @@ class WeatherScraper
             'icao' => $icaoCode,
             'direction' => $direction,
             'speed' => $speed,
-            'metar' => $metarLine
+            'metar' => $metarLine,
         ];
     }
 }

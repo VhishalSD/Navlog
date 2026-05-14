@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 /* =================================================
    LEG ARRAY CLASS
-   This class stores multiple Leg objects.
+   Stores the Leg objects for one selected flight.
 
-   It is used to work with a complete set of legs for
-   one selected flight. This keeps the project object
-   oriented instead of only using loose database arrays.
+   This class keeps the NAVLOG route object oriented
+   and handles totals such as accumulated time and distance.
 ================================================= */
 
 class LegArray
@@ -20,7 +19,6 @@ class LegArray
        ADD LEG
        Adds one Leg object to the collection.
     ================================================= */
-
     public function addLeg(Leg $leg): void
     {
         $this->legs[] = $leg;
@@ -30,7 +28,6 @@ class LegArray
        CREATE FROM DATABASE ROWS
        Converts database rows into Leg objects.
     ================================================= */
-
     public static function fromDatabaseRows(array $rows, int $tas = 105): self
     {
         $legArray = new self();
@@ -58,8 +55,9 @@ class LegArray
     /* =================================================
        GET ALL LEGS
        Returns all Leg objects in this collection.
+
+       @return Leg[]
     ================================================= */
-    /** @return Leg[] */
     public function all(): array
     {
         return $this->legs;
@@ -117,11 +115,15 @@ class LegArray
     public function toArray(): array
     {
         return array_map(
-            static fn (Leg $leg): array => $leg->toArray(),
+            static fn(Leg $leg): array => $leg->toArray(),
             $this->legs
         );
     }
 
+    /* =================================================
+       SUM BY GETTER
+       Adds one numeric value from every Leg object.
+    ================================================= */
     private function sumByGetter(string $getter): int
     {
         $total = 0;
@@ -133,6 +135,10 @@ class LegArray
         return $total;
     }
 
+    /* =================================================
+       SUM BY GETTER UNTIL INDEX
+       Adds one numeric value up to a given leg index.
+    ================================================= */
     private function sumByGetterUntilIndex(string $getter, int $index): int
     {
         if ($index <= 0 || $this->count() === 0) {
@@ -140,9 +146,9 @@ class LegArray
         }
 
         $sum = 0;
-        $max = min($index, $this->count() - 1);
+        $lastIndex = min($index, $this->count() - 1);
 
-        for ($i = 0; $i <= $max; $i++) {
+        for ($i = 0; $i <= $lastIndex; $i++) {
             $sum += $this->legs[$i]->{$getter}();
         }
 

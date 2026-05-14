@@ -2,11 +2,10 @@
 
 /* =================================================
    DATABASE CLASS
-   This class handles the connection between the
-   NAVLOG application and the MySQL database.
+   Handles all database access for the NAVLOG app.
 
-   The class uses PDO. This means SQL queries are
-   prepared before values are inserted.
+   PDO prepared statements are used for database
+   queries that contain user input.
 ================================================= */
 
 class Database
@@ -38,9 +37,8 @@ class Database
 
     /* =================================================
        SAVE OR UPDATE AIRCRAFT TIMING
-       Saves timing data for the selected flight.
-       If the flight already has aircraft data, it updates it.
-       If not, it creates aircraft data and links it to the flight.
+       Saves aircraft and timing details for one flight.
+       Existing aircraft data is updated when available.
     ================================================= */
 
     public function saveOrUpdateAircraftForFlight(
@@ -235,7 +233,7 @@ class Database
             'tas' => $tas
         ]);
 
-        return (int)$this->connect()->lastInsertId();
+        return (int)$this->connection->lastInsertId();
     }
 
     /* =================================================
@@ -306,8 +304,6 @@ class Database
     /* =================================================
        ADD CHECKPOINT
        Saves a checkpoint and returns the new ID.
-       A leg needs a checkpoint because the database
-       uses a foreign key.
     ================================================= */
 
     public function addCheckpoint(string $location, ?int $radioFrequency): int
@@ -321,7 +317,7 @@ class Database
             'radio_freq' => $radioFrequency
         ]);
 
-        return (int)$this->connect()->lastInsertId();
+        return (int)$this->connection->lastInsertId();
     }
 
     /* =================================================
@@ -420,7 +416,6 @@ class Database
     /* =================================================
        GET LEG BY ID
        Gets one leg and its checkpoint data.
-       This is used when the user wants to edit a leg.
     ================================================= */
 
     public function getLegById(int $legId): ?array
@@ -592,42 +587,105 @@ class Database
     /* =================================================
        DELETE LEGS BY FLIGHT ID
        Removes all legs that belong to one flight.
+       The connected checkpoints are removed as well.
     ================================================= */
 
-    public function deleteLegsByFlightId(int $flightId): bool
+    public function deleteLegsByFlightId(int $flightId, ?PDO $connection = null): bool
     {
-        $sql = 'DELETE FROM leg WHERE Flight_idFlight = :flight_id';
-        $statement = $this->connect()->prepare($sql);
+        $connection ??= $this->connect();
 
-        return $statement->execute([
+        $checkpointSql = 'SELECT Checkpoint_idCheckpoint
+                          FROM leg
+                          WHERE Flight_idFlight = :flight_id';
+
+        $checkpointStatement = $connection->prepare($checkpointSql);
+        $checkpointStatement->execute([
             'flight_id' => $flightId
         ]);
+
+        $checkpointIds = array_map('intval', array_column($checkpointStatement->fetchAll(), 'Checkpoint_idCheckpoint'));
+
+        $legSql = 'DELETE FROM leg WHERE Flight_idFlight = :flight_id';
+        $legStatement = $connection->prepare($legSql);
+        $legStatement->execute([
+            'flight_id' => $flightId
+        ]);
+
+        if (!empty($checkpointIds)) {
+            $placeholders = implode(',', array_fill(0, count($checkpointIds), '?'));
+            $checkpointDeleteSql = 'DELETE FROM checkpoint WHERE idCheckpoint IN (' . $placeholders . ')';
+            $checkpointDeleteStatement = $connection->prepare($checkpointDeleteSql);
+            $checkpointDeleteStatement->execute($checkpointIds);
+        }
+
+        return true;
     }
 
     /* =================================================
        DELETE FLIGHT
-       Removes one flight from the database.
-       The legs must be removed before the flight because
-       the leg table has a foreign key to the flight table.
+       Removes one flight and its connected data.
+       Related legs, checkpoints, aircraft links and unused
+       aircraft records are cleaned up in one transaction.
     ================================================= */
 
     public function deleteFlight(int $flightId): bool
     {
-        $this->deleteLegsByFlightId($flightId);
+        $connection = $this->connect();
+        $connection->beginTransaction();
 
-        $sql = 'DELETE FROM flight WHERE idFlight = :flight_id';
-        $statement = $this->connect()->prepare($sql);
+        try {
+            $aircraftSql = 'SELECT Aircraft_idAircraft
+                            FROM flight_has_aircraft
+                            WHERE Flight_idFlight = :flight_id';
 
-        return $statement->execute([
-            'flight_id' => $flightId
-        ]);
+            $aircraftStatement = $connection->prepare($aircraftSql);
+            $aircraftStatement->execute([
+                'flight_id' => $flightId
+            ]);
+
+            $aircraftIds = array_map('intval', array_column($aircraftStatement->fetchAll(), 'Aircraft_idAircraft'));
+
+            $this->deleteLegsByFlightId($flightId, $connection);
+
+            $linkSql = 'DELETE FROM flight_has_aircraft WHERE Flight_idFlight = :flight_id';
+            $linkStatement = $connection->prepare($linkSql);
+            $linkStatement->execute([
+                'flight_id' => $flightId
+            ]);
+
+            $flightSql = 'DELETE FROM flight WHERE idFlight = :flight_id';
+            $flightStatement = $connection->prepare($flightSql);
+            $flightStatement->execute([
+                'flight_id' => $flightId
+            ]);
+
+            foreach ($aircraftIds as $aircraftId) {
+                $usageSql = 'SELECT COUNT(*) FROM flight_has_aircraft WHERE Aircraft_idAircraft = :aircraft_id';
+                $usageStatement = $connection->prepare($usageSql);
+                $usageStatement->execute([
+                    'aircraft_id' => $aircraftId
+                ]);
+
+                if ((int)$usageStatement->fetchColumn() === 0) {
+                    $deleteAircraftSql = 'DELETE FROM aircraft WHERE idAircraft = :aircraft_id';
+                    $deleteAircraftStatement = $connection->prepare($deleteAircraftSql);
+                    $deleteAircraftStatement->execute([
+                        'aircraft_id' => $aircraftId
+                    ]);
+                }
+            }
+
+            $connection->commit();
+            return true;
+        } catch (Throwable $exception) {
+            $connection->rollBack();
+            throw $exception;
+        }
     }
 
     /* =================================================
        UPDATE FLIGHT
        Updates the main data of an existing flight.
-       The flight ID is used to make sure only the
-       selected flight is changed.
     ================================================= */
 
     public function updateFlight(
@@ -669,9 +727,8 @@ class Database
     }
 
     /* =================================================
-       EMPTY TIME TO NULL
-       Converts empty time fields to NULL so MySQL does
-       not receive invalid time values.
+       EMPTY VALUE HELPERS
+       Convert empty form values to NULL before saving.
     ================================================= */
 
     private function emptyToNull(?string $value): ?string

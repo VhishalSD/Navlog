@@ -1,7 +1,6 @@
 /* =================================================
-   NAVLOG SCHOOL VERSION STYLESHEET
-   This file contains the visual styling for the
-   school version of the NAVLOG application.
+   NAVLOG STYLESHEET
+   Visual styling for the NAVLOG application.
 ================================================= */
 
 /* =================================================
@@ -247,10 +246,6 @@ hr {
     margin-top: 6px;
 }
 
-.add-leg-save-button {
-    margin-top: 10px;
-}
-
 #load-flight-panel {
     grid-column: 1 / -1;
     order: 3;
@@ -276,15 +271,9 @@ hr {
     order: 8;
 }
 
-#add-leg-panel {
-    grid-column: 1 / -1;
-    order: 9;
-}
-
 .database-panel,
 .weather-panel,
-.add-flight-panel,
-.add-leg-panel {
+.add-flight-panel {
     margin-bottom: 10px;
     color: black;
     padding: 10px;
@@ -299,10 +288,6 @@ hr {
 
 .weather-panel {
     background: #fff2cc;
-}
-
-.add-leg-panel {
-    background: #f2dcdb;
 }
 
 #weather-panel,
@@ -361,8 +346,7 @@ select {
 }
 
 .weather-button,
-.add-flight-button,
-.add-leg-button {
+.add-flight-button {
     height: 36px;
     margin: 0;
     padding: 0;
@@ -381,15 +365,11 @@ select {
     width: 140px;
 }
 
-.add-leg-button {
-    width: 120px;
-}
 
 #weather-panel button,
 #taf-panel button,
 #add-flight-panel button,
-#fuel-calculation-panel button,
-#add-leg-panel button {
+#fuel-calculation-panel button {
     margin-top: 8px;
 }
 
@@ -400,11 +380,10 @@ select {
 }
 
 /* =================================================
-   ADD FLIGHT, ADD LEG AND FUEL GRIDS
+   ADD FLIGHT AND FUEL GRIDS
 ================================================= */
 
 .add-flight-grid,
-.add-leg-grid,
 .fuel-grid {
     display: grid;
     gap: 8px;
@@ -416,16 +395,11 @@ select {
     grid-template-columns: repeat(4, minmax(90px, 1fr));
 }
 
-.add-leg-grid {
-    grid-template-columns: repeat(8, minmax(90px, 1fr));
-}
-
 .fuel-grid {
     grid-template-columns: repeat(3, minmax(100px, 1fr));
 }
 
 .add-flight-field label,
-.add-leg-field label,
 .fuel-field label {
     display: block;
     font-size: 12px;
@@ -435,7 +409,6 @@ select {
 
 
 .add-flight-field input,
-.add-leg-field input,
 .fuel-field input {
     width: 100%;
     height: 34px;
@@ -455,41 +428,9 @@ select {
     font-size: 14px;
 }
 
-/* =================================================
-   AIRCRAFT AND TIMING FORM
-================================================= */
-
-.aircraft-timing-form .add-flight-grid {
-    grid-template-columns: repeat(3, minmax(0, 32.2%));
-    gap: 8px;
-}
-
-.aircraft-timing-form .add-flight-field {
-    min-width: 0;
-}
-
-.aircraft-timing-form input,
-.aircraft-timing-form select {
-    width: 100%;
-    max-width: 100%;
-    height: 32px;
-    box-sizing: border-box;
-    min-width: 0;
-    font-size: 13px;
-}
-
-.aircraft-timing-form input[type="time"] {
-    padding-left: 4px;
-    padding-right: 4px;
-}
-
 .add-flight-field input,
 .fuel-field input {
     background-color: #f2dcdb;
-}
-
-.add-leg-field input {
-    background-color: #dce6f1;
 }
 
 .fuel-result {
@@ -519,13 +460,47 @@ table {
     order: 10;
 }
 
-#table2 {
+.navlog-table-feedback {
+    grid-column: 1 / -1;
     order: 11;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0 0;
+}
+
+.navlog-table-message {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+#table2 {
+    order: 12;
 }
 
 #table3 {
-    order: 12;
-    margin-bottom: 70px;
+    order: 13;
+    margin-bottom: 0;
+}
+
+.navlog-table-actions {
+    grid-column: 1 / -1;
+    order: 14;
+    width: 100%;
+    max-width: 100%;
+    margin: 14px 0 70px 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    position: static;
+}
+
+.navlog-table-actions .add-flight-button {
+    width: 140px;
+    min-width: 140px;
+    height: 36px;
+    margin: 0;
+    padding: 0 16px;
 }
 
 table tr {
@@ -804,7 +779,6 @@ footer {
     #taf-panel,
     #add-flight-panel,
     #fuel-calculation-panel,
-    #add-leg-panel,
     #load-flight-panel,
     #table1,
     #table2,
@@ -856,7 +830,6 @@ footer {
 
 @media screen and (max-width: 720px) {
     .add-flight-grid,
-    .add-leg-grid,
     .fuel-grid {
         grid-template-columns: 1fr;
     }
@@ -1046,8 +1019,7 @@ body.light-mode .title h1 {
 
 body.light-mode .database-panel,
 body.light-mode .add-flight-panel,
-body.light-mode .weather-panel,
-body.light-mode .add-leg-panel {
+body.light-mode .weather-panel {
     border-color: #2563eb;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.10);
 }
@@ -1061,13 +1033,8 @@ body.light-mode .weather-panel {
     background-color: #fff4c7;
 }
 
-body.light-mode .add-leg-panel {
-    background-color: #f8dddd;
-}
-
 body.light-mode button,
 body.light-mode .add-flight-button,
-body.light-mode .add-leg-button,
 body.light-mode .weather-button {
     background-color: #d2dae6;
     color: #000066;
@@ -1312,8 +1279,8 @@ body.light-mode footer a {
 }
 
 /* =================================================
-   LEG CRUD ACTIONS
-   Compact Edit/Delete controls inside the NAVLOG table.
+   LEG DELETE ACTIONS
+   Compact delete control inside the NAVLOG table.
 ================================================= */
 
 .leg-row-actions {
@@ -1327,7 +1294,6 @@ body.light-mode footer a {
     line-height: 1;
 }
 
-.leg-row-actions a,
 .leg-row-actions button {
     display: inline-flex;
     align-items: center;
@@ -1360,34 +1326,10 @@ body.light-mode footer a {
     border-color: #8b0000;
 }
 
-.leg-row-actions a:hover {
-    background-color: #b8cce4;
-}
-
 .leg-row-actions button:hover {
     background-color: #e89a9a;
 }
 
-.add-leg-cancel-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 90px;
-    height: 34px;
-    margin-left: 10px;
-    padding: 0 12px;
-    border: 1px solid #334155;
-    border-radius: 4px;
-    background-color: #dce6f1;
-    color: #000066;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.add-leg-cancel-link:hover {
-    background-color: #b8cce4;
-}
 
 /* =================================================
    GRAPHICAL LEG VIEW
@@ -1396,10 +1338,10 @@ body.light-mode footer a {
 
 .graphical-leg-panel {
     grid-column: 1 / -1;
-    order: 13;
-    margin-top: 10px;
-    margin-bottom: 70px;
-    padding: 14px;
+    order: 15;
+    margin-top: 8px;
+    margin-bottom: 50px;
+    padding: 10px;
     background-color: #dce6f1;
     border: 2px solid #4f81bd;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
@@ -1410,32 +1352,33 @@ body.light-mode footer a {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 14px;
+    gap: 12px;
+    margin-bottom: 8px;
 }
 
 .graphical-leg-header h2 {
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
     color: #111827;
-    font-size: 22px;
+    font-size: 19px;
     text-align: left;
 }
 
 .graphical-leg-header p {
     margin: 0;
     color: #374151;
-    line-height: 1.4;
+    line-height: 1.25;
+    font-size: 13px;
 }
 
 .graphical-leg-header span {
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
-    padding: 5px 10px;
+    min-height: 28px;
+    padding: 4px 8px;
     background-color: #fff2cc;
     border: 1px solid #4f81bd;
     color: #111827;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -1469,32 +1412,32 @@ body.light-mode footer a {
 
 .graphical-leg-grid {
     display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 14px;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 10px;
 }
 
 .graphical-leg-card {
     min-width: 0;
-    padding: 12px;
+    padding: 9px;
     background-color: #f8fbff;
     border: 1px solid #4f81bd;
     color: #111827;
 }
 
 .graphical-leg-card h3 {
-    margin: 0 0 12px 0;
+    margin: 0 0 7px 0;
     color: #111827;
-    font-size: 17px;
+    font-size: 15px;
     text-align: left;
 }
 
 .route-line {
     display: grid;
-    grid-template-columns: auto minmax(60px, 1fr) auto minmax(60px, 1fr) auto;
+    grid-template-columns: auto minmax(50px, 1fr) auto minmax(50px, 1fr) auto;
     align-items: center;
-    gap: 8px;
-    min-height: 110px;
-    padding: 16px;
+    gap: 6px;
+    min-height: 74px;
+    padding: 10px;
     background: linear-gradient(180deg, #eef6ff 0%, #ffffff 100%);
     border: 1px dashed #4f81bd;
 }
@@ -1503,13 +1446,13 @@ body.light-mode footer a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 82px;
-    min-height: 38px;
-    padding: 6px 10px;
+    min-width: 64px;
+    min-height: 30px;
+    padding: 4px 8px;
     border: 2px solid #4f81bd;
     background-color: #fff2cc;
     color: #111827;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     text-align: center;
     white-space: nowrap;
@@ -1541,21 +1484,21 @@ body.light-mode footer a {
 
 .leg-data-list {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
     margin: 0;
 }
 
 .leg-data-list div {
-    padding: 8px;
+    padding: 5px;
     background-color: #fff2cc;
     border: 1px solid #4f81bd;
 }
 
 .leg-data-list dt {
-    margin: 0 0 2px 0;
+    margin: 0 0 1px 0;
     color: #374151;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -1563,7 +1506,7 @@ body.light-mode footer a {
 .leg-data-list dd {
     margin: 0;
     color: #111827;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     word-break: break-word;
 }
@@ -1577,6 +1520,7 @@ body.light-mode footer a {
 .measuring-point-card {
     display: none;
     grid-column: 1 / -1;
+    padding: 10px;
 }
 
 .measuring-point-card.is-visible {
@@ -1584,24 +1528,25 @@ body.light-mode footer a {
 }
 
 .measuring-point-intro {
-    margin: 0 0 12px 0;
+    margin: 0 0 8px 0;
     color: #374151;
-    line-height: 1.4;
+    line-height: 1.3;
+    font-size: 13px;
 }
 
 .measuring-point-controls {
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
-    gap: 12px;
+    grid-template-columns: 170px minmax(0, 1fr);
+    gap: 10px;
     align-items: end;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 
 .measuring-point-field label {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     color: #374151;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
 }
@@ -1624,9 +1569,9 @@ body.light-mode footer a {
 .measuring-point-visual {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
-    margin: 12px 0;
+    margin: 8px 0;
 }
 
 .measuring-point-label {
@@ -1656,13 +1601,13 @@ body.light-mode footer a {
 
 .measuring-point-results {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    margin: 14px 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0;
 }
 
 .measuring-point-results div {
-    padding: 8px;
+    padding: 6px;
     background-color: #fff2cc;
     border: 1px solid #4f81bd;
 }
@@ -1670,30 +1615,30 @@ body.light-mode footer a {
 .measuring-point-results span {
     display: block;
     color: #374151;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
 }
 
 .measuring-point-results strong {
     display: block;
-    margin-top: 2px;
+    margin-top: 1px;
     color: #111827;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .measuring-point-table {
-    margin-top: 12px;
+    margin-top: 8px;
     border: 1px solid #4f81bd;
     table-layout: fixed;
 }
 
 .measuring-point-table th,
 .measuring-point-table td {
-    padding: 7px;
+    padding: 5px;
     border: 1px solid #4f81bd;
     text-align: center;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .measuring-point-table th {
@@ -1786,7 +1731,6 @@ body.light-mode .route-line {
     button,
     .weather-panel,
     .add-flight-panel,
-    .add-leg-panel,
     .manage-flight-panel,
     #load-flight-panel,
     #fuel-calculation-panel,
@@ -1796,22 +1740,19 @@ body.light-mode .route-line {
     .leg-row-actions,
     .success-message,
     .error-message,
-    .form-error-message {
-        display: none !important;
-    }
-
+    .form-error-message,
     .graphical-leg-panel,
     .graphical-leg-card,
     .measuring-point-card {
-        display: block !important;
-        page-break-inside: avoid;
+        display: none !important;
     }
+
 
     .main {
         display: block !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 8mm !important;
+        padding: 0 !important;
         border: 0 !important;
         box-shadow: none !important;
         background: #ffffff !important;
@@ -1837,9 +1778,10 @@ body.light-mode .route-line {
     #table3 {
         display: table !important;
         width: 100% !important;
-        margin: 0 0 6mm 0 !important;
+        margin: 0 0 5mm 0 !important;
         border: 1px solid #000000 !important;
         page-break-inside: avoid;
+        break-inside: avoid;
         table-layout: fixed;
     }
 
@@ -1962,4 +1904,87 @@ body.light-mode .route-line {
 .correction-toggle-button:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.35);
+}
+
+/* =================================================
+   FINAL TABLE ACTION ORDER OVERRIDES
+   Keeps each save button directly under its own table.
+================================================= */
+
+.aircraft-table-feedback {
+    grid-column: 1 / -1;
+    order: 10 !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 12px 0 0 0;
+}
+
+#table1 {
+    order: 11 !important;
+}
+
+.aircraft-table-message {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
+
+.aircraft-table-actions {
+    grid-column: 1 / -1;
+    order: 12 !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 14px 0 24px 0 !important;
+    display: flex !important;
+    justify-content: flex-end;
+    align-items: center;
+    position: static !important;
+}
+
+.aircraft-table-actions .add-flight-button {
+    width: 210px;
+    min-width: 210px;
+    height: 36px;
+    margin: 0;
+    padding: 0 16px;
+    white-space: nowrap;
+}
+
+.navlog-table-feedback {
+    grid-column: 1 / -1;
+    order: 13 !important;
+}
+
+#table2 {
+    order: 14 !important;
+}
+
+#table3 {
+    order: 15 !important;
+    margin-bottom: 0 !important;
+}
+
+.navlog-table-actions {
+    grid-column: 1 / -1;
+    order: 16 !important;
+    width: 100%;
+    max-width: 100%;
+    margin: 14px 0 24px 0 !important;
+    display: flex !important;
+    justify-content: flex-end;
+    align-items: center;
+    position: static !important;
+}
+
+.navlog-table-actions .add-flight-button {
+    width: 140px;
+    min-width: 140px;
+    height: 36px;
+    margin: 0;
+    padding: 0 16px;
+}
+
+.graphical-leg-panel {
+    order: 17 !important;
+    margin-bottom: 50px !important;
 }
