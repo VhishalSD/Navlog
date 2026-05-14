@@ -143,18 +143,14 @@ De map bevat de volgende screenshots:
 - `01-selected-flight.png` - geselecteerde flight met geladen gegevens.
 - `02-manage-flight.png` - beheren van de geselecteerde flight.
 - `03-aircraft-timing.png` - aircraft- en timinggegevens per flight.
-- `04-add-leg.png` - formulier om een nieuwe leg toe te voegen.
-- `05-edit-leg.png` - formulier om een bestaande leg te bewerken.
-- `06-navlog-table-leg-crud.png` - NAVLOG-tabel met opgeslagen legs en CRUD-acties.
-- `07-delete-leg-modal.png` - custom delete modal voor het verwijderen van een leg.
-- `08-validation-example.png` - voorbeeld van server-side validatie.
-- `09-weather-metar-taf.png` - METAR/TAF-weerinformatie.
-- `10-fuel-calculation.png` - fuel calculation panel.
-- `11-light-dark-mode.png` - Light/Dark Mode.
-- `12-step-guide.png` - Step guide.
-- `13-print-view.png` - opgeschoonde printweergave.
-- `14-graphical-leg-view.png` - graphical leg view met de routeweergave van de geselecteerde flight en leg.
-- `15-1-60-correction-calculator.png` - geopende 1:60 correction calculator met slider, off-track, closing angle en course correction.
+- `04-add-edit-leg-crud.png` - NAVLOG-tabel waarin legs direct toegevoegd, bewerkt, opgeslagen en verwijderd kunnen worden.
+- `05-delete-leg-modal.png` - custom delete modal voor het verwijderen van een leg.
+- `06-validation-example.png` - voorbeeld van server-side validatie.
+- `07-weather-metar-taf.png` - METAR/TAF-weerinformatie.
+- `08-fuel-calculation.png` - fuel calculation panel met berekende total required fuel, remaining fuel en fuel status.
+- `09-light-dark-mode.png` - Light/Dark Mode naast elkaar weergegeven.
+- `10-step-guide.png` - Step guide met uitleg bij een belangrijk invoerveld.
+- `11-print-view.png` - opgeschoonde printweergave met aircraft timing en NAVLOG-tabel.
 
 ## 11. Reflectie
 

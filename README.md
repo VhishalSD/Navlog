@@ -68,18 +68,14 @@ Current screenshots:
 01-selected-flight.png
 02-manage-flight.png
 03-aircraft-timing.png
-04-add-leg.png
-05-edit-leg.png
-06-navlog-table-leg-crud.png
-07-delete-leg-modal.png
-08-validation-example.png
-09-weather-metar-taf.png
-10-fuel-calculation.png
-11-light-dark-mode.png
-12-step-guide.png
-13-print-view.png
-14-graphical-leg-view.png
-15-1-60-correction-calculator.png
+04-add-edit-leg-crud.png
+05-delete-leg-modal.png
+06-validation-example.png
+07-weather-metar-taf.png
+08-fuel-calculation.png
+09-light-dark-mode.png
+10-step-guide.png
+11-print-view.png
 ```
 
 ## Author
