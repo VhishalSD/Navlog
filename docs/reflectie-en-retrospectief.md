@@ -8,11 +8,11 @@ Het doel van het project was om de bestaande NAVLOG-structuur uit te breiden met
 
 ## 2. Koppeling met de opdracht
 
-De opdracht vraagt om een NAVLOG-applicatie waarin PHP, MySQL, PDO en OOP centraal staan. In mijn project is `index.php` de hoofdinterface van de applicatie. De belangrijkste logica is ondergebracht in class-bestanden zoals `Database.php`, `Leg.php`, `LegArray.php` en `WeatherScraper.php`.
+De opdracht vraagt om een NAVLOG-applicatie waarin PHP, MySQL, PDO en OOP centraal staan. In mijn project is `index.php` bewust klein gehouden als bootstrap-bestand. De paginaweergave staat in `views/navlog-page.php` en de belangrijkste logica is verdeeld over class-bestanden in mappen zoals `Application`, `Controllers`, `Builders`, `Renderers`, `Models`, `Database`, `Helpers` en `Services`.
 
 De GUI is gebaseerd op het aangeleverde NAVLOG-raamwerk. De interface is uitgebreid waar dat nodig was om databasefunctionaliteit, validatie, CRUD-acties, modals, fuel calculation en weather data mogelijk te maken. CSS en JavaScript zijn gebruikt als frontend-assets voor layout, dropdowns, modals, printweergave, Light/Dark Mode, Step guide en kleine gebruikersinteracties.
 
-De opdracht benoemt dat de applicatie volgens OOP-concepten moet werken. In mijn project wordt een databaseleg omgezet naar een `Leg` object. Meerdere `Leg` objecten worden beheerd via `LegArray`. De databaseacties staan in `Database.php`, zodat databaseverantwoordelijkheid niet direct door de GUI wordt afgehandeld.
+De opdracht benoemt dat de applicatie volgens OOP-concepten moet werken. In mijn project wordt een databaseleg omgezet naar een `Leg` object. Meerdere `Leg` objecten worden beheerd via `LegArray`. De databaseacties staan in `classes/Database/Database.php`, zodat databaseverantwoordelijkheid niet direct door de GUI wordt afgehandeld. Request-afhandeling, validatie, view-data en rendering zijn ook ondergebracht in aparte classes.
 
 ## 3. Wat ik heb gebouwd
 
@@ -45,7 +45,7 @@ Belangrijke onderdelen van de applicatie zijn:
 | Een leg invullen en alle waardes laten aansluiten op het NAVLOG/Excel-schema | Het Add/Edit Leg-formulier bevat velden zoals checkpoint, frequency, time, MEF, cruise, MH, variation, TH, WCA, wind, TT, distance en GS. |
 | Een set legs kunnen opslaan in de database | Nieuwe en aangepaste legs worden opgeslagen in MySQL via PDO-methodes in `Database.php`. |
 | Eerder opgeslagen legs kunnen inladen | De gebruiker selecteert een bestaande flight via Load saved flight. Daarna worden de gekoppelde legs uit de database geladen. |
-| Database class gebruiken | `Database.php` regelt de databaseverbinding en de database-acties voor flights, legs, checkpoints, aircraft data en koppeltabellen. |
+| Database class gebruiken | `classes/Database/Database.php` regelt de databaseverbinding en de database-acties voor flights, legs, checkpoints, aircraft data en koppeltabellen. |
 | OOP toepassen | `Leg.php` vertegenwoordigt één navigatieleg. `LegArray.php` beheert meerdere legs en ondersteunt totalen/accumulaties. |
 | GUI behouden en functioneel maken | Het aangeleverde NAVLOG-raamwerk is behouden en uitgebreid met formulieren, panels, modals en validaties. |
 
@@ -69,11 +69,15 @@ Ik heb PHP gebruikt voor de backend en MySQL voor de database. De applicatie dra
 
 ### PDO
 
-Voor de databaseverbinding heb ik PDO gebruikt. Dit is veiliger en netter dan losse SQL zonder prepared statements. In `Database.php` staan de methodes voor het ophalen, opslaan, bewerken en verwijderen van data.
+Voor de databaseverbinding heb ik PDO gebruikt. Dit is veiliger en netter dan losse SQL zonder prepared statements. In `classes/Database/Database.php` staan de methodes voor het ophalen, opslaan, bewerken en verwijderen van data.
 
 ### OOP
 
 De `Leg` class vertegenwoordigt één navigatieleg. Deze class bevat basisgegevens van een leg en berekent onder andere WCA, TH, MH en ground speed. De `LegArray` class beheert meerdere `Leg` objecten, telt tijd en afstand op en kan de objecten omzetten naar arrays voor de GUI. Hiermee sluit het project aan op de opdracht waarin `Leg` en `LegArray` centraal staan.
+
+### Projectstructuur
+
+Tijdens het refactoren heb ik de code opgesplitst in duidelijke mappen. `index.php` start alleen de applicatie. De view staat in `views/navlog-page.php`. De applicatieflow staat in `classes/Application`, de user actions staan in `classes/Controllers`, de view-data wordt voorbereid in `classes/Builders` en grotere HTML-onderdelen worden opgebouwd door classes in `classes/Renderers`. Hierdoor is de code beter gescheiden en is duidelijker te zien welk onderdeel welke verantwoordelijkheid heeft.
 
 ### Frontend
 
@@ -160,6 +164,8 @@ Een lastig onderdeel was het goed laten samenwerken van de backend, database en 
 
 Ook validatie was een belangrijk leerpunt. In het begin konden sommige verkeerde waarden nog worden opgeslagen. Later heb ik de validatie verbeterd zodat lege of ongeldige velden worden geblokkeerd voordat ze de database bereiken.
 
+Later in het project heb ik de structuur verder opgeschoond. Eerst stond er nog veel PHP en HTML samen in `index.php`. Uiteindelijk heb ik `index.php` teruggebracht tot een korte bootstrap en heb ik de paginaweergave, renderlogica, request handling en view-data voorbereiding verdeeld over aparte classes. Dit maakte het project groter qua aantal bestanden, maar het sluit beter aan op de OOP-eis van de opdracht.
+
 Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daarom zijn de panels gesplitst, is de kleine blauwe tabel readonly gemaakt, zijn delete-acties voorzien van custom modals, is de graphical leg view toegevoegd en is de printweergave opgeschoond.
 
 ## 12. Retrospectief
@@ -173,6 +179,7 @@ Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daa
 - De interface is overzichtelijker gemaakt.
 - De graphical leg view en 1:60 correction calculator sluiten beter aan op het aangeleverde NAVLOG-design.
 - De projectmap bevat README, screenshots en een database-export.
+- De code is uiteindelijk gestructureerd in duidelijke OOP-mappen zoals Application, Controllers, Builders, Renderers, Models en Database.
 
 ### Wat was lastig?
 
@@ -181,6 +188,7 @@ Ik heb ook geleerd dat gebruikersinterface en gebruiksgemak belangrijk zijn. Daa
 - Het voorkomen van foutieve database-invoer.
 - Het consistent maken van de interface.
 - Het netjes maken van de printweergave.
+- Het opsplitsen van `index.php` zonder bestaande functionaliteit te breken.
 
 ### Wat zou ik volgende keer verbeteren?
 
@@ -190,4 +198,4 @@ Daarnaast zou ik de JavaScript-data zoals airports, aircraft en frequencies late
 
 ## 13. Conclusie
 
-Ik heb een werkende NAVLOG-applicatie gemaakt met PHP, MySQL, PDO en OOP. De applicatie ondersteunt flightbeheer, legbeheer, databaseopslag, validatie, weather data, fuel calculation, graphical leg view, 1:60 correction, screenshots, een database-export en een nette README. Het project is geschikt om in te leveren en laat zien dat ik backend, database, OOP en frontend kan combineren in één werkende applicatie.
+Ik heb een werkende NAVLOG-applicatie gemaakt met PHP, MySQL, PDO en OOP. De applicatie ondersteunt flightbeheer, legbeheer, databaseopslag, validatie, weather data, fuel calculation, graphical leg view, 1:60 correction, screenshots, een database-export en een nette README. Door de uiteindelijke mappenstructuur met Application, Controllers, Builders, Renderers, Models en Database is ook duidelijk zichtbaar dat de applicatie volgens OOP is opgebouwd. Het project is geschikt om in te leveren en laat zien dat ik backend, database, OOP en frontend kan combineren in één werkende applicatie.
