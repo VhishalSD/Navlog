@@ -2,6 +2,11 @@
 
 class NavlogApplication
 {
+    public static function create(): self
+    {
+        return new self();
+    }
+
     public function run(array $server, array $postData, array $getData, array &$session): array
     {
         $db = new Database();
