@@ -67,6 +67,95 @@ class Leg
     }
 
     /* =================================================
+       NAVLOG CALCULATIONS
+       Calculates WCA, TH, MH, GS and time interval.
+    ================================================= */
+    private static function normalizeDegreesStatic(float $degrees): int
+    {
+        $normalized = fmod($degrees, 360.0);
+
+        if ($normalized < 0) {
+            $normalized += 360.0;
+        }
+
+        return (int)round($normalized);
+    }
+
+    public static function calculateNavlogValues(
+        int $variation,
+        int $windDirection,
+        int $windVelocity,
+        int $trueTrack,
+        int $distanceInterval,
+        int $tas
+    ): array {
+        $safeTas = max(1, $tas);
+        $angle = deg2rad($trueTrack - ($windDirection - 180));
+        $windCorrectionRatio = ($windVelocity * sin($angle)) / $safeTas;
+        $windCorrectionRatio = max(-1, min(1, $windCorrectionRatio));
+
+        $wca = (int)round(rad2deg(asin($windCorrectionRatio)));
+        $th = self::normalizeDegreesStatic($trueTrack + $wca);
+        $mh = self::normalizeDegreesStatic($th - $variation);
+
+        $windAngle = deg2rad($windDirection - $trueTrack);
+        $gs = max(0, (int)round($safeTas - ($windVelocity * cos($windAngle))));
+        $timeInt = $gs > 0 && $distanceInterval > 0
+                ? (int)round(($distanceInterval / $gs) * 60)
+                : 0;
+
+        return [
+                'wca' => $wca,
+                'th' => $th,
+                'mh' => $mh,
+                'gs' => $gs,
+                'time_int' => $timeInt,
+        ];
+    }
+
+    /* =================================================
+       CREATE FROM NAVLOG INPUT
+       Creates a Leg object from validated form input.
+    ================================================= */
+    public static function fromNavlogInput(
+        int $legNumber,
+        int $timeAcc,
+        ?string $eto,
+        ?string $reto,
+        ?string $ato,
+        int $mef,
+        int $cruise,
+        string $checkpoint,
+        ?int $frequency,
+        int $headingVar,
+        int $windDirection,
+        int $windVelocity,
+        int $trueTrack,
+        int $distanceInterval,
+        int $distanceAcc,
+        int $tas = 105
+    ): self {
+        return new self(
+            $legNumber,
+            $timeAcc,
+            $eto,
+            $reto,
+            $ato,
+            $mef,
+            $cruise,
+            $checkpoint,
+            $frequency,
+            $headingVar,
+            $windDirection,
+            $windVelocity,
+            $trueTrack,
+            $distanceInterval,
+            $distanceAcc,
+            $tas
+        );
+    }
+
+    /* =================================================
        CREATE FROM DATABASE ROW
        Converts one database row into a Leg object.
        Calculated values are recalculated by this class.
@@ -299,9 +388,12 @@ class Leg
             'checkpoint_location' => $this->checkpoint,
             'checkpoint_frequency' => $this->frequency,
             'MH' => $magneticHeading,
+            'mh' => $magneticHeading,
             'var' => $this->headingVar,
             'TH' => $trueHeading,
+            'th' => $trueHeading,
             'WCA' => $wca,
+            'wca' => $wca,
             'wind_dir' => $this->windDirection,
             'wind_v' => $this->windVelocity,
             'tt' => $this->trueTrack,
