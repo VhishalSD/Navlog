@@ -7,6 +7,23 @@ class NavlogApplication
         return new self();
     }
 
+    public function render(): string
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $pageRequest = PageRequestView::fromCurrentRequest();
+        $viewData = $this->run(
+            $pageRequest->serverData(),
+            $pageRequest->postData(),
+            $pageRequest->getData(),
+            $pageRequest->sessionData()
+        );
+
+        return NavlogPageRenderer::render($viewData);
+    }
+
     public function run(array $server, array $postData, array $getData, array &$session): array
     {
         $db = new Database();
@@ -44,6 +61,7 @@ class NavlogApplication
             'fieldErrors' => [],
             'submittedNavlogRows' => [],
             'successCode' => $getData['success'] ?? '',
+            'postData' => $postData,
         ];
 
         try {
@@ -57,7 +75,7 @@ class NavlogApplication
             $viewData['validationErrors'] = $requestResult['validationErrors'];
             $viewData['fieldErrors'] = $requestResult['fieldErrors'];
             $viewData['errorMessage'] = $requestResult['errorMessage'];
-            $viewData['submittedNavlogRows'] = $requestResult['submittedNavlogRows'];
+            $viewData['submittedNavlogRows'] = $requestResult['submittedNavlogRows'] ?? [];
 
             $pageData = $pageDataBuilder->build(
                 $getData,
